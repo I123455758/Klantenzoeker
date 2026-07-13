@@ -163,6 +163,155 @@ $('btn-accept').addEventListener('click', async () => {
   }
 })
 
+// --- Excel-import -----------------------------------------------------------
+/** Doelvelden met Nederlandse labels (klantnummer is verplicht). */
+const IMPORT_FIELDS = [
+  ['klantnummer', 'Klantnummer *'],
+  ['klantnaam', 'Klantnaam'],
+  ['adres', 'Adres'],
+  ['postcode', 'Postcode'],
+  ['gemeente', 'Gemeente'],
+  ['land', 'Land'],
+  ['btw_nummer', 'Btw-nummer'],
+  ['telefoon', 'Telefoon'],
+  ['email', 'E-mail'],
+  ['status', 'Status']
+]
+
+const overlay = $('import-overlay')
+const sheetSelect = $('import-sheet')
+let importData = null // { filePath, sheets: [...] }
+
+function openImportModal() {
+  overlay.classList.remove('hidden')
+}
+function closeImportModal() {
+  overlay.classList.add('hidden')
+  importData = null
+}
+
+/** Bouw de mapping-selects en het voorbeeld voor het gekozen werkblad. */
+function renderSheet(idx) {
+  const sheet = importData.sheets[idx]
+  $('import-rowcount').textContent = `${nlNumber.format(sheet.rowCount)} rijen`
+
+  // Kolommapping.
+  const mapDiv = $('import-mapping')
+  mapDiv.innerHTML = ''
+  for (const [field, label] of IMPORT_FIELDS) {
+    const row = document.createElement('div')
+    row.className = 'map-row'
+    const lab = document.createElement('label')
+    lab.textContent = label
+    const sel = document.createElement('select')
+    sel.dataset.field = field
+    const none = new Option('— (geen) —', '')
+    sel.add(none)
+    for (const h of sheet.headers) sel.add(new Option(h, h))
+    sel.value = sheet.mapping[field] || ''
+    row.append(lab, sel)
+    mapDiv.append(row)
+  }
+
+  // Voorbeeldtabel.
+  const table = $('import-preview')
+  table.innerHTML = ''
+  const thead = document.createElement('thead')
+  const htr = document.createElement('tr')
+  for (const h of sheet.headers) {
+    const th = document.createElement('th')
+    th.textContent = h
+    htr.append(th)
+  }
+  thead.append(htr)
+  const tbody = document.createElement('tbody')
+  for (const r of sheet.sample) {
+    const tr = document.createElement('tr')
+    for (const h of sheet.headers) {
+      const td = document.createElement('td')
+      const v = r[h]
+      td.textContent = v == null ? '' : String(v)
+      tr.append(td)
+    }
+    tbody.append(tr)
+  }
+  table.append(thead, tbody)
+}
+
+function collectMapping() {
+  const mapping = {}
+  for (const sel of $('import-mapping').querySelectorAll('select')) {
+    mapping[sel.dataset.field] = sel.value || null
+  }
+  return mapping
+}
+
+$('btn-import').addEventListener('click', async () => {
+  $('import-msg').textContent = ''
+  statusEl.textContent = 'Bestand kiezen…'
+  try {
+    const data = await window.api.analyzeImport()
+    if (!data) {
+      statusEl.textContent = 'Import geannuleerd.'
+      return
+    }
+    importData = data
+    sheetSelect.innerHTML = ''
+    data.sheets.forEach((s, i) => sheetSelect.add(new Option(`${s.name} (${s.rowCount})`, String(i))))
+    sheetSelect.value = '0'
+    const s = await window.api.getSettings()
+    $('import-mark-missing').checked = !!s.markMissingInactive
+    renderSheet(0)
+    openImportModal()
+    statusEl.textContent = ''
+  } catch (err) {
+    statusEl.textContent = 'Kon bestand niet lezen: ' + (err?.message || err)
+  }
+})
+
+sheetSelect.addEventListener('change', () => renderSheet(Number(sheetSelect.value)))
+$('import-close').addEventListener('click', closeImportModal)
+$('import-cancel').addEventListener('click', closeImportModal)
+overlay.addEventListener('click', (e) => {
+  if (e.target === overlay) closeImportModal()
+})
+
+$('import-run').addEventListener('click', async () => {
+  const mapping = collectMapping()
+  if (!mapping.klantnummer) {
+    $('import-msg').textContent = 'Koppel eerst de kolom "Klantnummer".'
+    return
+  }
+  const idx = Number(sheetSelect.value)
+  const markMissing = $('import-mark-missing').checked
+  const runBtn = $('import-run')
+  runBtn.disabled = true
+  $('import-msg').textContent = 'Bezig met importeren…'
+  try {
+    await window.api.setSetting('markMissingInactive', markMissing)
+    const res = await window.api.runImport({
+      filePath: importData.filePath,
+      sheetName: importData.sheets[idx].name,
+      mapping,
+      markMissingInactive: markMissing
+    })
+    closeImportModal()
+    const parts = [
+      `${nlNumber.format(res.inserted)} nieuw`,
+      `${nlNumber.format(res.updated)} bijgewerkt`
+    ]
+    if (res.skipped) parts.push(`${nlNumber.format(res.skipped)} overgeslagen`)
+    if (res.marked) parts.push(`${nlNumber.format(res.marked)} inactief gemarkeerd`)
+    statusEl.textContent = 'Import klaar: ' + parts.join(', ')
+    currentQuery = searchInput.value
+    reload()
+  } catch (err) {
+    $('import-msg').textContent = 'Import mislukt: ' + (err?.message || err)
+  } finally {
+    runBtn.disabled = false
+  }
+})
+
 // --- Opstarten --------------------------------------------------------------
 async function init() {
   try {

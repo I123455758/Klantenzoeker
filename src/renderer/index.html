@@ -23,6 +23,7 @@
           <button id="clear" class="ghost" title="Wissen">×</button>
         </div>
         <div class="actions">
+          <button id="btn-import" class="ghost primary" title="Excel importeren">Importeren</button>
           <button id="btn-seed" class="ghost" title="Vul testdata (100k)">Testdata</button>
           <button id="btn-accept" class="ghost" title="Acceptatietests draaien">Tests</button>
           <button id="btn-dark" class="ghost" title="Donkere modus">◐</button>
@@ -35,6 +36,46 @@
         <span id="status">Bezig met laden…</span>
         <span id="timing" class="timing"></span>
       </footer>
+    </div>
+
+    <!-- Importdialoog (kolommapping + voorbeeld) -->
+    <div id="import-overlay" class="overlay hidden">
+      <div class="modal">
+        <header class="modal-head">
+          <h2>Excel importeren</h2>
+          <button id="import-close" class="ghost" title="Sluiten">×</button>
+        </header>
+        <div class="modal-body">
+          <div class="row">
+            <label for="import-sheet">Werkblad</label>
+            <select id="import-sheet"></select>
+            <span id="import-rowcount" class="muted"></span>
+          </div>
+
+          <h3>Kolommen koppelen</h3>
+          <p class="muted">
+            Koppel de kolommen uit je bestand aan de klantvelden. Het klantnummer
+            is verplicht; bestaande klanten worden bijgewerkt (upsert).
+          </p>
+          <div id="import-mapping" class="mapping"></div>
+
+          <label class="checkline">
+            <input type="checkbox" id="import-mark-missing" />
+            Verdwenen klanten inactief markeren (nooit verwijderen)
+          </label>
+
+          <h3>Voorbeeld</h3>
+          <div class="preview-wrap">
+            <table id="import-preview" class="preview"></table>
+          </div>
+        </div>
+        <footer class="modal-foot">
+          <span id="import-msg" class="muted"></span>
+          <div class="grow"></div>
+          <button id="import-cancel" class="ghost">Annuleren</button>
+          <button id="import-run" class="ghost primary">Importeren</button>
+        </footer>
+      </div>
     </div>
 
     <script type="module" src="./src/main.js"></script>

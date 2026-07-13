@@ -10,8 +10,14 @@ import {
 import { search, clearCache, setFuzzyEnabled } from '../search/searchEngine.js'
 import { seedDatabase } from '../database/seed.js'
 import { runAcceptance } from '../search/acceptance.js'
+import { readWorkbook } from '../import/excel.js'
+import { autoMap } from '../import/mapping.js'
+import { importRows } from '../import/importer.js'
 import { settings } from '../utils/settings.js'
 import { logger } from '../utils/logger.js'
+
+/** Laatst geanalyseerd importbestand (in geheugen), zodat 'run' niet opnieuw hoeft te parsen. */
+let lastImport = null
 
 /**
  * Registreer alle IPC-handlers. Alle invoer wordt gevalideerd; de renderer krijgt
@@ -95,6 +101,53 @@ export function registerIpc(win) {
     return runAcceptance()
   })
 
+  // --- Excel-import -------------------------------------------------------
+  ipcMain.handle('import:analyze', async () => {
+    const res = await dialog.showOpenDialog(win, {
+      title: 'Excel-bestand importeren',
+      properties: ['openFile'],
+      filters: [{ name: 'Excel-werkboek', extensions: ['xlsx'] }]
+    })
+    if (res.canceled || !res.filePaths[0]) return null
+
+    const filePath = res.filePaths[0]
+    const sheets = await readWorkbook(filePath)
+    lastImport = { filePath, sheets }
+
+    // Alleen een lichte voorbeeldweergave terug naar de renderer.
+    return {
+      filePath,
+      sheets: sheets.map((s) => ({
+        name: s.name,
+        headers: s.headers,
+        rowCount: s.rowCount,
+        sample: s.rows.slice(0, 8),
+        mapping: autoMap(s.headers)
+      }))
+    }
+  })
+
+  ipcMain.handle('import:run', (_e, payload) => {
+    const filePath = typeof payload?.filePath === 'string' ? payload.filePath : ''
+    const sheetName = typeof payload?.sheetName === 'string' ? payload.sheetName : ''
+    const mapping = payload?.mapping
+    if (!lastImport || lastImport.filePath !== filePath) {
+      throw new Error('Geen geanalyseerd bestand meer in geheugen; importeer opnieuw.')
+    }
+    if (!mapping || typeof mapping !== 'object' || !mapping.klantnummer) {
+      throw new Error('Koppel minstens de kolom "klantnummer" voordat je importeert.')
+    }
+    const sheet =
+      lastImport.sheets.find((s) => s.name === sheetName) || lastImport.sheets[0]
+    if (!sheet) throw new Error('Werkblad niet gevonden.')
+
+    const result = importRows(sheet.rows, mapping, {
+      markMissingInactive: payload?.markMissingInactive === true
+    })
+    lastImport = null // geheugen vrijgeven
+    return result
+  })
+
   // --- Database openen / nieuwe maken ------------------------------------
   ipcMain.handle('db:open', async () => {
     const res = await dialog.showOpenDialog(win, {
@@ -136,6 +189,8 @@ export function teardownIpc() {
     'settings:set',
     'seed',
     'acceptance',
+    'import:analyze',
+    'import:run',
     'db:open',
     'db:new'
   ]) {

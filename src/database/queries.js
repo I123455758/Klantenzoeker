@@ -221,3 +221,38 @@ export function listHistoriek(customerId) {
 export function deleteAllCustomers() {
   stmts().deleteAll.run()
 }
+
+/**
+ * Alle bestaande klantnummers als set (voor nieuw/bijgewerkt-classificatie bij import).
+ * @returns {Set<string>}
+ */
+export function existingKlantnummerSet() {
+  const rows = getDb().prepare('SELECT klantnummer FROM customers').all()
+  return new Set(rows.map((r) => r.klantnummer))
+}
+
+/**
+ * Markeer actieve klanten die NIET in de importlijst voorkomen als inactief.
+ * Verwijdert nooit iets. Gebruikt een tijdelijke tabel i.p.v. een grote NOT IN-lijst.
+ * @param {string[]} importedKlantnummers klantnummers die in de import zaten
+ * @returns {number} aantal gemarkeerde klanten
+ */
+export function markMissingInactive(importedKlantnummers) {
+  const db = getDb()
+  const tx = db.transaction((list) => {
+    db.exec('CREATE TEMP TABLE IF NOT EXISTS _import_seen (klantnummer TEXT PRIMARY KEY)')
+    db.exec('DELETE FROM _import_seen')
+    const ins = db.prepare('INSERT OR IGNORE INTO _import_seen(klantnummer) VALUES (?)')
+    for (const k of list) if (k != null) ins.run(String(k))
+    const res = db
+      .prepare(
+        `UPDATE customers SET status = 'inactief', updated_at = datetime('now')
+         WHERE status = 'actief'
+           AND klantnummer NOT IN (SELECT klantnummer FROM _import_seen)`
+      )
+      .run()
+    db.exec('DROP TABLE _import_seen')
+    return res.changes
+  })
+  return tx(importedKlantnummers)
+}

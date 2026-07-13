@@ -36,6 +36,11 @@ const api = {
 
   acceptance: () => ipcRenderer.invoke('acceptance'),
 
+  /** Kies een Excel-bestand en krijg werkbladen + automatische kolommapping terug. */
+  analyzeImport: () => ipcRenderer.invoke('import:analyze'),
+  /** @param {{ filePath: string, sheetName: string, mapping: Record<string, string|null>, markMissingInactive: boolean }} payload */
+  runImport: (payload) => ipcRenderer.invoke('import:run', payload),
+
   openDatabase: () => ipcRenderer.invoke('db:open'),
   newDatabase: () => ipcRenderer.invoke('db:new')
 }
