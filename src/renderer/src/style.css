@@ -328,3 +328,18 @@ table.preview th {
 .detail-form .field.changed select {
   border-color: var(--accent);
 }
+
+/* --- Instellingen --------------------------------------------------------- */
+.modal-narrow {
+  width: min(520px, 94vw);
+}
+
+.db-info {
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 8px 12px;
+  background: var(--status-bg);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  word-break: break-all;
+}

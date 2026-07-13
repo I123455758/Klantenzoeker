@@ -498,10 +498,77 @@ $('import-run').addEventListener('click', async () => {
   }
 })
 
+// --- Instellingen -----------------------------------------------------------
+const settingsOverlay = $('settings-overlay')
+
+async function refreshDbInfo() {
+  try {
+    const stats = await window.api.stats()
+    $('set-dbpath').textContent = stats.dbPath || '—'
+    $('set-count').textContent = nlNumber.format(stats.total)
+  } catch {
+    /* stil */
+  }
+}
+
+async function openSettings() {
+  const s = await window.api.getSettings()
+  $('set-dark').checked = !!s.darkMode
+  $('set-fuzzy').checked = s.fuzzyEnabled !== false
+  $('set-mark-missing').checked = !!s.markMissingInactive
+  $('settings-msg').textContent = ''
+  await refreshDbInfo()
+  settingsOverlay.classList.remove('hidden')
+}
+function closeSettings() {
+  settingsOverlay.classList.add('hidden')
+}
+
+$('btn-settings').addEventListener('click', openSettings)
+$('settings-close').addEventListener('click', closeSettings)
+$('settings-done').addEventListener('click', closeSettings)
+settingsOverlay.addEventListener('click', (e) => {
+  if (e.target === settingsOverlay) closeSettings()
+})
+
+$('set-dark').addEventListener('change', async (e) => {
+  applyDark(e.target.checked)
+  await window.api.setSetting('darkMode', e.target.checked)
+})
+$('set-fuzzy').addEventListener('change', async (e) => {
+  await window.api.setSetting('fuzzyEnabled', e.target.checked)
+  reload() // opnieuw zoeken met/zonder typefouttolerantie
+})
+$('set-mark-missing').addEventListener('change', async (e) => {
+  await window.api.setSetting('markMissingInactive', e.target.checked)
+})
+
+async function switchDatabase(fn) {
+  $('settings-msg').textContent = 'Bezig…'
+  try {
+    const res = await fn()
+    if (!res) {
+      $('settings-msg').textContent = 'Geannuleerd.'
+      return
+    }
+    searchInput.value = ''
+    currentQuery = ''
+    reload()
+    await refreshDbInfo()
+    $('settings-msg').textContent = `Actief: ${nlNumber.format(res.total)} klanten.`
+    statusEl.textContent = `Database gewijzigd: ${nlNumber.format(res.total)} klanten.`
+  } catch (err) {
+    $('settings-msg').textContent = 'Mislukt: ' + (err?.message || err)
+  }
+}
+$('set-db-open').addEventListener('click', () => switchDatabase(() => window.api.openDatabase()))
+$('set-db-new').addEventListener('click', () => switchDatabase(() => window.api.newDatabase()))
+
 // Escape sluit een open dialoog.
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return
   if (!detailOverlay.classList.contains('hidden')) closeDetail()
+  else if (!settingsOverlay.classList.contains('hidden')) closeSettings()
   else if (!overlay.classList.contains('hidden')) closeImportModal()
 })
 

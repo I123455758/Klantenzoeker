@@ -29,6 +29,7 @@
           <button id="btn-seed" class="ghost" title="Vul testdata (100k)">Testdata</button>
           <button id="btn-accept" class="ghost" title="Acceptatietests draaien">Tests</button>
           <button id="btn-dark" class="ghost" title="Donkere modus">◐</button>
+          <button id="btn-settings" class="ghost" title="Instellingen">⚙</button>
         </div>
       </header>
 
@@ -38,6 +39,46 @@
         <span id="status">Bezig met laden…</span>
         <span id="timing" class="timing"></span>
       </footer>
+    </div>
+
+    <!-- Instellingen -->
+    <div id="settings-overlay" class="overlay hidden">
+      <div class="modal modal-narrow">
+        <header class="modal-head">
+          <h2>Instellingen</h2>
+          <button id="settings-close" class="ghost" title="Sluiten">×</button>
+        </header>
+        <div class="modal-body">
+          <h3>Weergave</h3>
+          <label class="checkline"><input type="checkbox" id="set-dark" /> Donkere modus</label>
+
+          <h3>Zoeken</h3>
+          <label class="checkline">
+            <input type="checkbox" id="set-fuzzy" /> Typefouten tolereren (fuzzy zoeken)
+          </label>
+
+          <h3>Import</h3>
+          <label class="checkline">
+            <input type="checkbox" id="set-mark-missing" />
+            Standaard "verdwenen klanten inactief markeren" aanvinken
+          </label>
+
+          <h3>Database</h3>
+          <div class="db-info">
+            <div><span class="muted">Bestand:</span> <span id="set-dbpath">—</span></div>
+            <div><span class="muted">Aantal klanten:</span> <span id="set-count">—</span></div>
+          </div>
+          <div class="row">
+            <button id="set-db-open" class="ghost">Database openen…</button>
+            <button id="set-db-new" class="ghost">Nieuwe database…</button>
+          </div>
+        </div>
+        <footer class="modal-foot">
+          <span id="settings-msg" class="muted"></span>
+          <div class="grow"></div>
+          <button id="settings-done" class="ghost primary">Klaar</button>
+        </footer>
+      </div>
     </div>
 
     <!-- Detailvenster (klant bekijken/bewerken + historiek) -->
