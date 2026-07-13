@@ -3,8 +3,13 @@ import { logger } from '../utils/logger.js'
 
 /**
  * Lees een Excel-bestand (.xlsx) in met exceljs. Elk werkblad wordt omgezet naar
- * kopteksten + rijen (objecten kop -> waarde). De eerste niet-lege rij is de kop.
+ * kopteksten + rijen (objecten kop -> waarde). De koprij is de rij die de
+ * verwachte kolommen (Klant + Omschrijving) bevat — niet zomaar de eerste
+ * niet-lege rij, want de echte export heeft metadata-rijen erboven.
  */
+
+/** Kolomnamen die samen de echte koprij markeren (genormaliseerd, kleine letters). */
+const HEADER_KEYS = ['klant', 'omschrijving']
 
 /** Zet een exceljs-cel om naar een eenvoudige string/nummerwaarde. */
 function cellValue(cell) {
@@ -20,6 +25,17 @@ function cellValue(cell) {
   return v
 }
 
+/** Normaliseer een ruwe celwaarde tot kleine-letters-tekst voor koprijherkenning. */
+function headerText(v) {
+  if (v == null) return ''
+  if (typeof v === 'object') {
+    if (v.text != null) v = v.text
+    else if (v.result != null) v = v.result
+    else return ''
+  }
+  return String(v).toLowerCase().trim()
+}
+
 /**
  * Lees alle werkbladen uit een bestand.
  * @param {string} filePath
@@ -31,14 +47,21 @@ export async function readWorkbook(filePath) {
   const sheets = []
 
   wb.eachSheet((ws) => {
-    // Zoek de eerste rij met inhoud als koprij.
+    // Zoek de ECHTE koprij: de rij die de verwachte kolommen bevat (Klant +
+    // Omschrijving). Zo worden metadata-rijen erboven (titel, bedrijfsnaam,
+    // exportdatum) overgeslagen. Valt terug op de eerste niet-lege rij als die
+    // kop niet gevonden wordt, zodat andere bestanden blijven werken.
     let headerRowNumber = 0
+    let firstNonEmpty = 0
     ws.eachRow({ includeEmpty: false }, (row, rn) => {
-      if (headerRowNumber === 0) {
-        const vals = row.values.filter((x) => x != null && String(x).trim() !== '')
-        if (vals.length > 0) headerRowNumber = rn
+      const texts = (row.values || []).map(headerText).filter(Boolean)
+      if (texts.length === 0) return
+      if (firstNonEmpty === 0) firstNonEmpty = rn
+      if (headerRowNumber === 0 && HEADER_KEYS.every((k) => texts.includes(k))) {
+        headerRowNumber = rn
       }
     })
+    if (headerRowNumber === 0) headerRowNumber = firstNonEmpty
     if (headerRowNumber === 0) {
       sheets.push({ name: ws.name, headers: [], rows: [], rowCount: 0 })
       return

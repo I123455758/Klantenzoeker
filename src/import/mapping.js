@@ -5,17 +5,17 @@ import { CUSTOMER_COLUMNS } from '../database/schema.js'
  * aan onze vaste velden op basis van Nederlandse (en enkele Engelse) synoniemen.
  */
 
-/** Synoniemen per doelveld (genormaliseerd: kleine letters, zonder scheidingstekens). */
+/**
+ * Synoniemen per doelveld (genormaliseerd: kleine letters, zonder scheidingstekens).
+ * Volgt het echte exportmodel (ADR 0001): Klant, Omschrijving en twee keer Grk5.
+ * `excel.js` ontdubbelt de dubbele kop `Grk5` naar `Grk5` en `Grk5 (2)`, die
+ * normaliseren naar `grk5` en `grk52` — daarom die twee als aparte synoniemen.
+ */
 const SYNONYMS = {
-  klantnummer: ['klantnummer', 'klantnr', 'klantnrr', 'nummer', 'nr', 'klant', 'klantid', 'id', 'code', 'klantcode', 'debiteur', 'debiteurnummer', 'customernumber', 'customerid', 'accountnumber'],
-  klantnaam: ['klantnaam', 'naam', 'bedrijf', 'bedrijfsnaam', 'firma', 'handelsnaam', 'organisatie', 'company', 'companyname', 'name', 'contact'],
-  adres: ['adres', 'straat', 'straatnaam', 'straathuisnr', 'address', 'street', 'adreslijn'],
-  postcode: ['postcode', 'pc', 'postnr', 'postalcode', 'zip', 'zipcode'],
-  gemeente: ['gemeente', 'plaats', 'stad', 'woonplaats', 'city', 'plaatsnaam', 'town'],
-  land: ['land', 'country', 'landcode'],
-  btw_nummer: ['btw', 'btwnummer', 'btwnr', 'vat', 'vatnumber', 'ondernemingsnummer', 'kvk', 'kvknummer', 'tva'],
-  telefoon: ['telefoon', 'tel', 'telnr', 'gsm', 'mobiel', 'phone', 'telephone', 'mobile', 'nummer telefoon'],
-  email: ['email', 'emailadres', 'mail', 'mailadres', 'epost', 'emailaddress'],
+  klantnummer: ['klant', 'klantnummer', 'klantnr', 'nummer', 'nr', 'debiteur', 'debiteurnummer', 'code', 'klantcode'],
+  klantnaam: ['omschrijving', 'klantnaam', 'naam', 'bedrijf', 'bedrijfsnaam', 'firma', 'handelsnaam', 'organisatie'],
+  grk5_a: ['grk5', 'grk5a', 'groepering', 'groep', 'groeperingscode', 'grk'],
+  grk5_b: ['grk52', 'grk5b', 'grk52e', 'groepering2', 'groep2'],
   status: ['status', 'actief', 'toestand', 'state']
 }
 
