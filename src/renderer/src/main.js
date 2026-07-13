@@ -72,7 +72,7 @@ const gridOptions = {
   },
   getRowId: (p) => String(p.data.id),
   onRowDoubleClicked: (e) => {
-    if (e.data) console.log('Detail (komt in latere fase):', e.data.klantnummer)
+    if (e.data) openDetail(e.data.id)
   }
 }
 
@@ -161,6 +161,163 @@ $('btn-accept').addEventListener('click', async () => {
   } catch (err) {
     statusEl.textContent = 'Tests mislukt: ' + (err?.message || err)
   }
+})
+
+// --- Detailvenster (bekijken/bewerken + historiek) --------------------------
+/** Bewerkbare velden met label en type. klantnummer blijft de sleutel (alleen-lezen). */
+const DETAIL_FIELDS = [
+  { field: 'klantnummer', label: 'Klantnummer', readonly: true },
+  { field: 'status', label: 'Status', type: 'select', options: ['actief', 'inactief'] },
+  { field: 'klantnaam', label: 'Klantnaam', wide: true },
+  { field: 'adres', label: 'Adres', wide: true },
+  { field: 'postcode', label: 'Postcode' },
+  { field: 'gemeente', label: 'Gemeente' },
+  { field: 'land', label: 'Land' },
+  { field: 'btw_nummer', label: 'Btw-nummer' },
+  { field: 'telefoon', label: 'Telefoon' },
+  { field: 'email', label: 'E-mail' }
+]
+
+const detailOverlay = $('detail-overlay')
+let detailState = null // { id, original: {field: value} }
+
+function closeDetail() {
+  detailOverlay.classList.add('hidden')
+  detailState = null
+}
+
+/** Open het detailvenster voor een klant-id. */
+async function openDetail(id) {
+  try {
+    const c = await window.api.getCustomer(id)
+    if (!c) {
+      statusEl.textContent = 'Klant niet gevonden.'
+      return
+    }
+    detailState = { id: c.id, original: {} }
+    $('detail-title').textContent = `${c.klantnummer} — ${c.klantnaam || ''}`
+    $('detail-msg').textContent = ''
+
+    const form = $('detail-form')
+    form.innerHTML = ''
+    for (const def of DETAIL_FIELDS) {
+      const val = c[def.field] == null ? '' : String(c[def.field])
+      detailState.original[def.field] = val
+
+      const wrap = document.createElement('div')
+      wrap.className = 'field' + (def.wide ? ' wide' : '')
+      const lab = document.createElement('label')
+      lab.textContent = def.label
+
+      let input
+      if (def.type === 'select') {
+        input = document.createElement('select')
+        for (const opt of def.options) input.add(new Option(opt, opt))
+        input.value = def.options.includes(val) ? val : def.options[0]
+      } else {
+        input = document.createElement('input')
+        input.type = 'text'
+        input.value = val
+        if (def.readonly) input.readOnly = true
+      }
+      input.dataset.field = def.field
+      // Markeer visueel welke velden gewijzigd zijn.
+      input.addEventListener('input', () => {
+        wrap.classList.toggle('changed', input.value !== detailState.original[def.field])
+      })
+      input.addEventListener('change', () => {
+        wrap.classList.toggle('changed', input.value !== detailState.original[def.field])
+      })
+      wrap.append(lab, input)
+      form.append(wrap)
+    }
+
+    await renderHistory(c.id)
+    detailOverlay.classList.remove('hidden')
+  } catch (err) {
+    statusEl.textContent = 'Kon klant niet laden: ' + (err?.message || err)
+  }
+}
+
+/** Toon de wijzigingshistoriek in het detailvenster. */
+async function renderHistory(id) {
+  const table = $('detail-history')
+  table.innerHTML = ''
+  const rows = await window.api.getHistoriek(id)
+  const thead = document.createElement('thead')
+  thead.innerHTML =
+    '<tr><th>Datum</th><th>Veld</th><th>Oud</th><th>Nieuw</th></tr>'
+  const tbody = document.createElement('tbody')
+  if (!rows.length) {
+    const tr = document.createElement('tr')
+    const td = document.createElement('td')
+    td.colSpan = 4
+    td.className = 'muted'
+    td.textContent = 'Nog geen wijzigingen.'
+    tr.append(td)
+    tbody.append(tr)
+  } else {
+    const labelOf = Object.fromEntries(DETAIL_FIELDS.map((d) => [d.field, d.label]))
+    for (const r of rows) {
+      const tr = document.createElement('tr')
+      const cells = [
+        r.changed_at || '',
+        labelOf[r.veld] || r.veld,
+        r.oud == null ? '' : r.oud,
+        r.nieuw == null ? '' : r.nieuw
+      ]
+      for (const c of cells) {
+        const td = document.createElement('td')
+        td.textContent = String(c)
+        tr.append(td)
+      }
+      tbody.append(tr)
+    }
+  }
+  table.append(thead, tbody)
+}
+
+$('detail-save').addEventListener('click', async () => {
+  if (!detailState) return
+  const changes = {}
+  for (const input of $('detail-form').querySelectorAll('[data-field]')) {
+    const f = input.dataset.field
+    if (f === 'klantnummer') continue // sleutel niet wijzigen
+    const v = input.value
+    if (v !== detailState.original[f]) changes[f] = v
+  }
+  if (Object.keys(changes).length === 0) {
+    $('detail-msg').textContent = 'Geen wijzigingen om op te slaan.'
+    return
+  }
+  const saveBtn = $('detail-save')
+  saveBtn.disabled = true
+  $('detail-msg').textContent = 'Opslaan…'
+  try {
+    const updated = await window.api.updateCustomer(detailState.id, changes)
+    // Nieuwe uitgangswaarden zetten en markeringen wissen.
+    for (const input of $('detail-form').querySelectorAll('[data-field]')) {
+      const f = input.dataset.field
+      const nv = updated[f] == null ? '' : String(updated[f])
+      detailState.original[f] = nv
+      input.value = f === 'status' && !nv ? 'actief' : nv
+      input.parentElement.classList.remove('changed')
+    }
+    $('detail-title').textContent = `${updated.klantnummer} — ${updated.klantnaam || ''}`
+    $('detail-msg').textContent = 'Opgeslagen.'
+    await renderHistory(detailState.id)
+    reload() // grid verversen
+  } catch (err) {
+    $('detail-msg').textContent = 'Opslaan mislukt: ' + (err?.message || err)
+  } finally {
+    saveBtn.disabled = false
+  }
+})
+
+$('detail-close').addEventListener('click', closeDetail)
+$('detail-cancel').addEventListener('click', closeDetail)
+detailOverlay.addEventListener('click', (e) => {
+  if (e.target === detailOverlay) closeDetail()
 })
 
 // --- Excel-import -----------------------------------------------------------
@@ -310,6 +467,13 @@ $('import-run').addEventListener('click', async () => {
   } finally {
     runBtn.disabled = false
   }
+})
+
+// Escape sluit een open dialoog.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return
+  if (!detailOverlay.classList.contains('hidden')) closeDetail()
+  else if (!overlay.classList.contains('hidden')) closeImportModal()
 })
 
 // --- Opstarten --------------------------------------------------------------

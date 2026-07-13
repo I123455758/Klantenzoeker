@@ -38,6 +38,30 @@
       </footer>
     </div>
 
+    <!-- Detailvenster (klant bekijken/bewerken + historiek) -->
+    <div id="detail-overlay" class="overlay hidden">
+      <div class="modal">
+        <header class="modal-head">
+          <h2 id="detail-title">Klant</h2>
+          <button id="detail-close" class="ghost" title="Sluiten">×</button>
+        </header>
+        <div class="modal-body">
+          <form id="detail-form" class="detail-form" autocomplete="off"></form>
+
+          <h3>Wijzigingshistoriek</h3>
+          <div class="preview-wrap">
+            <table id="detail-history" class="preview"></table>
+          </div>
+        </div>
+        <footer class="modal-foot">
+          <span id="detail-msg" class="muted"></span>
+          <div class="grow"></div>
+          <button id="detail-cancel" class="ghost">Sluiten</button>
+          <button id="detail-save" class="ghost primary">Opslaan</button>
+        </footer>
+      </div>
+    </div>
+
     <!-- Importdialoog (kolommapping + voorbeeld) -->
     <div id="import-overlay" class="overlay hidden">
       <div class="modal">

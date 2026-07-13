@@ -279,3 +279,52 @@ table.preview th {
   position: sticky;
   top: 0;
 }
+
+/* --- Detailformulier ------------------------------------------------------ */
+.detail-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+
+.detail-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-form .field.wide {
+  grid-column: 1 / -1;
+}
+
+.detail-form label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.detail-form input,
+.detail-form select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.detail-form input:focus,
+.detail-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.detail-form input[readonly] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.detail-form .field.changed input,
+.detail-form .field.changed select {
+  border-color: var(--accent);
+}
