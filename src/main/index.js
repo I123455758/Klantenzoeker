@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { openDatabase } from '../database/connection.js'
 import { setFuzzyEnabled } from '../search/searchEngine.js'
 import { registerIpc, teardownIpc } from './ipc.js'
@@ -12,6 +13,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 /** @type {import('electron').BrowserWindow | null} */
 let mainWindow = null
 
+/** Vensterpictogram (voor dev; de gepackagede build gebruikt het exe-icoon). */
+function windowIcon() {
+  const p = join(app.getAppPath(), 'build', 'icon.png')
+  return existsSync(p) ? p : undefined
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
@@ -20,6 +27,7 @@ function createWindow() {
     minHeight: 600,
     backgroundColor: settings.get('darkMode') ? '#1e1e1e' : '#ffffff',
     title: 'Klantenzoeker',
+    icon: windowIcon(),
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
