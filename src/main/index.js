@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, dialog } from 'electron'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { existsSync } from 'node:fs'
@@ -30,10 +30,12 @@ function createWindow() {
     icon: windowIcon(),
     show: false,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false // preload heeft Node nodig voor het contextBridge-kanaal
+      // De preload gebruikt uitsluitend contextBridge + ipcRenderer; die zijn ook
+      // in een sandboxed preload beschikbaar. Sandbox aan = strengste isolatie.
+      sandbox: true
     }
   })
 
@@ -43,6 +45,16 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
     return { action: 'deny' }
+  })
+
+  // Navigatie weg van de eigen renderer blokkeren (defense-in-depth tegen
+  // per ongeluk of kwaadwillig openen van externe URLs in het app-venster).
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const current = mainWindow?.webContents.getURL()
+    if (url !== current) {
+      event.preventDefault()
+      if (/^https?:/i.test(url)) shell.openExternal(url)
+    }
   })
 
   const devUrl = process.env['ELECTRON_RENDERER_URL']
@@ -58,7 +70,22 @@ function createWindow() {
 
 app.whenReady().then(() => {
   // Database en zoekinstellingen initialiseren vóór het venster.
-  openDatabase()
+  // Faalt dit (bijv. native module-mismatch, vergrendeld of beschadigd
+  // db-bestand), toon dan een begrijpelijke melding i.p.v. een stille crash.
+  try {
+    openDatabase()
+  } catch (e) {
+    logger.error('app', 'Database openen mislukt:', e.message)
+    dialog.showErrorBox(
+      'Database kon niet worden geopend',
+      'Klantenzoeker kon de database niet openen en wordt afgesloten.\n\n' +
+        `Oorzaak: ${e.message}\n\n` +
+        'Controleer of het databasebestand niet in gebruik of beschadigd is, ' +
+        'of maak via het menu een nieuwe database aan.'
+    )
+    app.quit()
+    return
+  }
   setFuzzyEnabled(settings.get('fuzzyEnabled') !== false)
   logger.info('app', 'Klantenzoeker gestart')
 

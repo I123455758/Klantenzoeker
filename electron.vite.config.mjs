@@ -14,7 +14,15 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'src/main/index.js') }
+        input: { index: resolve(__dirname, 'src/main/index.js') },
+        // Forceer CommonJS met .cjs-extensie. Het project is "type": "module",
+        // dus een .js-main zou als ESM geladen worden — en Electron kan ESM NIET
+        // uit een asar-archief laden (de verpakte .exe toont dan geen venster).
+        // .cjs laadt betrouwbaar uit asar, ongeacht het package-type.
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].cjs'
+        }
       }
     }
   },
@@ -23,11 +31,13 @@ export default defineConfig({
     build: {
       rollupOptions: {
         input: { index: resolve(__dirname, 'src/preload/index.js') },
-        // Forceer CommonJS met .js-extensie zodat het preload-pad in main klopt
-        // en Electron het betrouwbaar laadt (geen ESM-preload-randgevallen).
+        // Forceer CommonJS met .cjs-extensie. Het project is "type": "module",
+        // dus een .js-preload zou door Electron als ESM geladen worden en de
+        // require()-aanroepen zouden falen (preload crasht → window.api undefined).
+        // De .cjs-extensie dwingt de CommonJS-loader af, ongeacht het package-type.
         output: {
           format: 'cjs',
-          entryFileNames: '[name].js'
+          entryFileNames: '[name].cjs'
         }
       }
     }

@@ -1,3 +1,8 @@
+# LET OP: electron-builder is bewust gepind op 24.13.3 (zie package.json).
+# electron-builder 25.x reconstrueert de node_modules-layout en plaatst gehoiste
+# transitieve deps (o.a. call-bind-apply-helpers via pdfkit) op de verkeerde plek,
+# waardoor require() faalt en de verpakte app zonder venster opstart. v24 kopieert
+# de schijf-layout intact. Niet upgraden zonder de verpakte .exe te testen.
 appId: be.klantenzoeker.app
 productName: Klantenzoeker
 copyright: Klantenzoeker
