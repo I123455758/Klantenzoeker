@@ -422,11 +422,12 @@ function collectMapping() {
   return mapping
 }
 
-$('btn-import').addEventListener('click', async () => {
+/** Gedeelde importflow voor Excel en PDF. @param {() => Promise<any>} analyzeFn */
+async function startImport(analyzeFn, soort) {
   $('import-msg').textContent = ''
-  statusEl.textContent = 'Bestand kiezen…'
+  statusEl.textContent = `${soort} kiezen…`
   try {
-    const data = await window.api.analyzeImport()
+    const data = await analyzeFn()
     if (!data) {
       statusEl.textContent = 'Import geannuleerd.'
       return
@@ -435,15 +436,24 @@ $('btn-import').addEventListener('click', async () => {
     sheetSelect.innerHTML = ''
     data.sheets.forEach((s, i) => sheetSelect.add(new Option(`${s.name} (${s.rowCount})`, String(i))))
     sheetSelect.value = '0'
+    // Werkbladkeuze verbergen bij één werkblad (PDF heeft er altijd één).
+    sheetSelect.parentElement.style.display = data.sheets.length > 1 ? '' : 'none'
     const s = await window.api.getSettings()
     $('import-mark-missing').checked = !!s.markMissingInactive
     renderSheet(0)
     openImportModal()
     statusEl.textContent = ''
+    if (importData.sheets[0].rowCount === 0) {
+      $('import-msg').textContent =
+        'Geen bruikbare rijen gevonden. Controleer of het bestand klantnummers bevat.'
+    }
   } catch (err) {
     statusEl.textContent = 'Kon bestand niet lezen: ' + (err?.message || err)
   }
-})
+}
+
+$('btn-import').addEventListener('click', () => startImport(() => window.api.analyzeImport(), 'Excel-bestand'))
+$('btn-pdf').addEventListener('click', () => startImport(() => window.api.analyzePdfImport(), 'PDF-bestand'))
 
 sheetSelect.addEventListener('change', () => renderSheet(Number(sheetSelect.value)))
 $('import-close').addEventListener('click', closeImportModal)

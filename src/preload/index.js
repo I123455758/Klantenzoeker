@@ -38,6 +38,8 @@ const api = {
 
   /** Kies een Excel-bestand en krijg werkbladen + automatische kolommapping terug. */
   analyzeImport: () => ipcRenderer.invoke('import:analyze'),
+  /** Kies een PDF-bestand en krijg de afgeleide klantrijen + mapping terug. */
+  analyzePdfImport: () => ipcRenderer.invoke('import:analyzePdf'),
   /** @param {{ filePath: string, sheetName: string, mapping: Record<string, string|null>, markMissingInactive: boolean }} payload */
   runImport: (payload) => ipcRenderer.invoke('import:run', payload),
 

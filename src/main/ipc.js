@@ -13,7 +13,9 @@ import { runAcceptance } from '../search/acceptance.js'
 import { readWorkbook } from '../import/excel.js'
 import { autoMap } from '../import/mapping.js'
 import { importRows } from '../import/importer.js'
+import { analyzePdf } from '../import/pdf.js'
 import { collectRows, exportRows } from '../export/exporter.js'
+import { CUSTOMER_COLUMNS } from '../database/schema.js'
 import { settings } from '../utils/settings.js'
 import { logger } from '../utils/logger.js'
 
@@ -128,6 +130,32 @@ export function registerIpc(win) {
     }
   })
 
+  ipcMain.handle('import:analyzePdf', async () => {
+    const res = await dialog.showOpenDialog(win, {
+      title: 'PDF-bestand importeren',
+      properties: ['openFile'],
+      filters: [{ name: 'PDF-document', extensions: ['pdf'] }]
+    })
+    if (res.canceled || !res.filePaths[0]) return null
+
+    const filePath = res.filePaths[0]
+    const { headers, rows } = await analyzePdf(filePath)
+    // Bewaar als één "werkblad" zodat import:run ongewijzigd hergebruikt kan worden.
+    lastImport = { filePath, sheets: [{ name: 'PDF', headers, rows, rowCount: rows.length }] }
+
+    // Identiteitsmapping: de bronkoppen zijn al onze eigen veldnamen.
+    const mapping = {}
+    for (const f of CUSTOMER_COLUMNS) mapping[f] = headers.includes(f) ? f : null
+
+    return {
+      filePath,
+      kind: 'pdf',
+      sheets: [
+        { name: 'PDF', headers, rowCount: rows.length, sample: rows.slice(0, 8), mapping }
+      ]
+    }
+  })
+
   ipcMain.handle('import:run', (_e, payload) => {
     const filePath = typeof payload?.filePath === 'string' ? payload.filePath : ''
     const sheetName = typeof payload?.sheetName === 'string' ? payload.sheetName : ''
@@ -208,6 +236,7 @@ export function teardownIpc() {
     'seed',
     'acceptance',
     'import:analyze',
+    'import:analyzePdf',
     'import:run',
     'export',
     'db:open',

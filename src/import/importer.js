@@ -27,6 +27,7 @@ export function importRows(sourceRows, mapping, opts = {}) {
 
   for (const raw of sourceRows) {
     const c = applyMapping(raw, mapping)
+    if (raw._pdf_pad) c.pdf_pad = raw._pdf_pad // herkomst bewaren bij PDF-import
     const klantnummer = c.klantnummer == null ? '' : String(c.klantnummer).trim()
     if (!klantnummer) {
       skipped++ // zonder klantnummer kunnen we niet upserten
