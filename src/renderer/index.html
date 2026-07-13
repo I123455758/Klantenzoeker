@@ -12,7 +12,12 @@
   <body>
     <div id="app">
       <header class="toolbar">
+        <div class="brand">
+          <span class="brand-logo">🔎</span>
+          <span class="brand-name">Klantenzoeker</span>
+        </div>
         <div class="search-wrap">
+          <span class="search-icon">🔍</span>
           <input
             id="search"
             type="text"
@@ -20,20 +25,59 @@
             autocomplete="off"
             spellcheck="false"
           />
-          <button id="clear" class="ghost" title="Wissen">×</button>
+          <button id="clear" class="icon-btn" title="Wissen">×</button>
         </div>
         <div class="actions">
-          <button id="btn-import" class="ghost primary" title="Excel importeren">Importeren</button>
-          <button id="btn-pdf" class="ghost" title="PDF importeren">PDF</button>
-          <button id="btn-export" class="ghost" title="Resultaten exporteren (Excel/CSV/PDF)">Exporteren</button>
-          <button id="btn-seed" class="ghost" title="Vul testdata (100k)">Testdata</button>
-          <button id="btn-accept" class="ghost" title="Acceptatietests draaien">Tests</button>
-          <button id="btn-dark" class="ghost" title="Donkere modus">◐</button>
-          <button id="btn-settings" class="ghost" title="Instellingen">⚙</button>
+          <button id="btn-import" class="btn primary" title="Excel importeren">
+            <span class="ic">📥</span> Importeren
+          </button>
+          <button id="btn-pdf" class="btn" title="PDF importeren"><span class="ic">📄</span> PDF</button>
+          <button id="btn-export" class="btn" title="Resultaten exporteren (Excel/CSV/PDF)">
+            <span class="ic">📤</span> Exporteren
+          </button>
+          <span class="sep"></span>
+          <button id="btn-seed" class="btn subtle" title="Vul testdata (100k)">Testdata</button>
+          <button id="btn-accept" class="btn subtle" title="Acceptatietests draaien">Tests</button>
+          <button id="btn-dark" class="icon-btn" title="Donkere modus">◐</button>
+          <button id="btn-settings" class="icon-btn" title="Instellingen">⚙</button>
         </div>
       </header>
 
-      <div id="grid" class="ag-theme-alpine grid"></div>
+      <div id="stage">
+        <div id="grid" class="ag-theme-alpine grid"></div>
+
+        <!-- Startpagina / lege-database-scherm -->
+        <section id="welcome" class="welcome hidden">
+          <div class="welcome-card">
+            <div class="welcome-logo">🔎</div>
+            <h1>Welkom bij Klantenzoeker</h1>
+            <p class="welcome-lead">
+              Je database is nog leeg. Importeer je klanten om te beginnen — daarna
+              doorzoek je in enkele milliseconden honderdduizenden klanten.
+            </p>
+
+            <div class="tiles">
+              <button class="tile" id="wel-excel">
+                <span class="tile-ic">📥</span>
+                <span class="tile-title">Excel importeren</span>
+                <span class="tile-desc">Lees een .xlsx-bestand in met automatische kolomherkenning.</span>
+              </button>
+              <button class="tile" id="wel-pdf">
+                <span class="tile-ic">📄</span>
+                <span class="tile-title">PDF importeren</span>
+                <span class="tile-desc">Haal klanten uit een PDF-lijst (naam, nummer, adres …).</span>
+              </button>
+              <button class="tile" id="wel-seed">
+                <span class="tile-ic">⚡</span>
+                <span class="tile-title">Testdata genereren</span>
+                <span class="tile-desc">Vul 100.000 voorbeeldklanten om de snelheid te ervaren.</span>
+              </button>
+            </div>
+
+            <button class="linklike" id="wel-open">Of open een bestaande database…</button>
+          </div>
+        </section>
+      </div>
 
       <footer class="statusbar">
         <span id="status">Bezig met laden…</span>

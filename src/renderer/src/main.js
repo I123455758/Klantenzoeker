@@ -126,7 +126,7 @@ $('btn-dark').addEventListener('click', async () => {
 })
 
 // --- Testdata (seed) --------------------------------------------------------
-$('btn-seed').addEventListener('click', async () => {
+async function runSeed() {
   const btn = $('btn-seed')
   btn.disabled = true
   const stop = window.api.onSeedProgress((pct) => {
@@ -136,13 +136,15 @@ $('btn-seed').addEventListener('click', async () => {
     const res = await window.api.seed(100000)
     statusEl.textContent = `Testdata klaar: ${nlNumber.format(res.total)} klanten`
     reload()
+    await refreshEmptyState()
   } catch (err) {
     statusEl.textContent = 'Seed mislukt: ' + (err?.message || err)
   } finally {
     stop()
     btn.disabled = false
   }
-})
+}
+$('btn-seed').addEventListener('click', runSeed)
 
 // --- Acceptatietests --------------------------------------------------------
 $('btn-accept').addEventListener('click', async () => {
@@ -491,6 +493,7 @@ $('import-run').addEventListener('click', async () => {
     statusEl.textContent = 'Import klaar: ' + parts.join(', ')
     currentQuery = searchInput.value
     reload()
+    await refreshEmptyState()
   } catch (err) {
     $('import-msg').textContent = 'Import mislukt: ' + (err?.message || err)
   } finally {
@@ -555,6 +558,7 @@ async function switchDatabase(fn) {
     currentQuery = ''
     reload()
     await refreshDbInfo()
+    await refreshEmptyState()
     $('settings-msg').textContent = `Actief: ${nlNumber.format(res.total)} klanten.`
     statusEl.textContent = `Database gewijzigd: ${nlNumber.format(res.total)} klanten.`
   } catch (err) {
@@ -563,6 +567,31 @@ async function switchDatabase(fn) {
 }
 $('set-db-open').addEventListener('click', () => switchDatabase(() => window.api.openDatabase()))
 $('set-db-new').addEventListener('click', () => switchDatabase(() => window.api.newDatabase()))
+
+// --- Startpagina (lege database) --------------------------------------------
+const welcomeEl = $('welcome')
+
+/** Toon het welkomscherm alleen bij een lege database. @returns {Promise<number>} totaal */
+async function refreshEmptyState() {
+  let total = 0
+  try {
+    total = (await window.api.stats()).total
+  } catch {
+    /* stil */
+  }
+  const empty = total === 0
+  welcomeEl.classList.toggle('hidden', !empty)
+  if (empty) {
+    statusEl.textContent = 'Lege database — importeer klanten of genereer testdata om te beginnen.'
+    timingEl.textContent = ''
+  }
+  return total
+}
+
+$('wel-excel').addEventListener('click', () => startImport(() => window.api.analyzeImport(), 'Excel-bestand'))
+$('wel-pdf').addEventListener('click', () => startImport(() => window.api.analyzePdfImport(), 'PDF-bestand'))
+$('wel-seed').addEventListener('click', runSeed)
+$('wel-open').addEventListener('click', () => switchDatabase(() => window.api.openDatabase()))
 
 // Escape sluit een open dialoog.
 document.addEventListener('keydown', (e) => {
@@ -581,10 +610,7 @@ async function init() {
     applyDark(false)
   }
   try {
-    const stats = await window.api.stats()
-    if (stats.total === 0) {
-      statusEl.textContent = 'Lege database — klik op "Testdata" om 100k klanten te genereren.'
-    }
+    await refreshEmptyState()
   } catch (err) {
     console.error(err)
   }
