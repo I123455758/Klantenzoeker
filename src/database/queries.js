@@ -157,6 +157,11 @@ export function pageAll(limit, offset) {
   return stmts().pageByName.all(limit, offset)
 }
 
+/** Alle klanten op naam gesorteerd (voor export zonder filter). @returns {any[]} */
+export function allCustomersOrdered() {
+  return getDb().prepare('SELECT * FROM customers ORDER BY klantnaam, id').all()
+}
+
 /** @param {number} n @returns {string[]} */
 export function sampleKlantnummers(n = 500) {
   return stmts()

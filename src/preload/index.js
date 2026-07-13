@@ -41,6 +41,9 @@ const api = {
   /** @param {{ filePath: string, sheetName: string, mapping: Record<string, string|null>, markMissingInactive: boolean }} payload */
   runImport: (payload) => ipcRenderer.invoke('import:run', payload),
 
+  /** Exporteer de huidige (gefilterde) resultaten; formaat volgt uit de gekozen extensie. */
+  exportResults: (query) => ipcRenderer.invoke('export', { query }),
+
   openDatabase: () => ipcRenderer.invoke('db:open'),
   newDatabase: () => ipcRenderer.invoke('db:new')
 }

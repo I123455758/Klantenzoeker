@@ -13,6 +13,7 @@ import { runAcceptance } from '../search/acceptance.js'
 import { readWorkbook } from '../import/excel.js'
 import { autoMap } from '../import/mapping.js'
 import { importRows } from '../import/importer.js'
+import { collectRows, exportRows } from '../export/exporter.js'
 import { settings } from '../utils/settings.js'
 import { logger } from '../utils/logger.js'
 
@@ -148,6 +149,23 @@ export function registerIpc(win) {
     return result
   })
 
+  // --- Export -------------------------------------------------------------
+  ipcMain.handle('export', async (_e, payload) => {
+    const query = typeof payload?.query === 'string' ? payload.query : ''
+    const res = await dialog.showSaveDialog(win, {
+      title: 'Exporteren',
+      defaultPath: 'klanten-export.xlsx',
+      filters: [
+        { name: 'Excel-werkboek', extensions: ['xlsx'] },
+        { name: 'CSV-bestand', extensions: ['csv'] },
+        { name: 'PDF-document', extensions: ['pdf'] }
+      ]
+    })
+    if (res.canceled || !res.filePath) return null
+    const rows = collectRows(query)
+    return exportRows(res.filePath, rows, query)
+  })
+
   // --- Database openen / nieuwe maken ------------------------------------
   ipcMain.handle('db:open', async () => {
     const res = await dialog.showOpenDialog(win, {
@@ -191,6 +209,7 @@ export function teardownIpc() {
     'acceptance',
     'import:analyze',
     'import:run',
+    'export',
     'db:open',
     'db:new'
   ]) {

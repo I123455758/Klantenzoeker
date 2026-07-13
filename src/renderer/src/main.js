@@ -163,6 +163,25 @@ $('btn-accept').addEventListener('click', async () => {
   }
 })
 
+// --- Export -----------------------------------------------------------------
+$('btn-export').addEventListener('click', async () => {
+  const btn = $('btn-export')
+  btn.disabled = true
+  statusEl.textContent = 'Exporteren…'
+  try {
+    const res = await window.api.exportResults(currentQuery)
+    if (!res) {
+      statusEl.textContent = 'Export geannuleerd.'
+      return
+    }
+    statusEl.textContent = `Geëxporteerd: ${nlNumber.format(res.count)} klanten naar ${res.format.toUpperCase()} (${res.path})`
+  } catch (err) {
+    statusEl.textContent = 'Export mislukt: ' + (err?.message || err)
+  } finally {
+    btn.disabled = false
+  }
+})
+
 // --- Detailvenster (bekijken/bewerken + historiek) --------------------------
 /** Bewerkbare velden met label en type. klantnummer blijft de sleutel (alleen-lezen). */
 const DETAIL_FIELDS = [

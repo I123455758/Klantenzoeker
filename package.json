@@ -14,7 +14,9 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
-    "exceljs": "^4.4.0"
+    "exceljs": "^4.4.0",
+    "pdfjs-dist": "^4.10.38",
+    "pdfkit": "^0.15.2"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",
