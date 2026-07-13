@@ -4,18 +4,15 @@ import { normHeader, autoMap, applyMapping } from '../src/import/mapping.js'
 
 test('normHeader lowercases and strips non-alphanumerics', () => {
   assert.equal(normHeader('Klant-Nr.'), 'klantnr')
-  assert.equal(normHeader('E-mailadres'), 'emailadres')
+  assert.equal(normHeader('Grk5 (2)'), 'grk52')
 })
 
-test('autoMap matches Dutch synonyms', () => {
-  const m = autoMap(['Klantnr', 'Naam', 'Straat', 'Postcode', 'Plaats', 'Telefoon', 'E-mail'])
-  assert.equal(m.klantnummer, 'Klantnr')
-  assert.equal(m.klantnaam, 'Naam')
-  assert.equal(m.adres, 'Straat')
-  assert.equal(m.postcode, 'Postcode')
-  assert.equal(m.gemeente, 'Plaats')
-  assert.equal(m.telefoon, 'Telefoon')
-  assert.equal(m.email, 'E-mail')
+test('autoMap matches the real export columns', () => {
+  const m = autoMap(['Klant', 'Omschrijving', 'Grk5', 'Grk5 (2)'])
+  assert.equal(m.klantnummer, 'Klant')
+  assert.equal(m.klantnaam, 'Omschrijving')
+  assert.equal(m.grk5_a, 'Grk5')
+  assert.equal(m.grk5_b, 'Grk5 (2)')
 })
 
 test('autoMap assigns each source header at most once', () => {
@@ -30,11 +27,11 @@ test('autoMap returns null for unknown fields', () => {
 })
 
 test('applyMapping maps row and normalises status/empties', () => {
-  const row = { Klantnr: '152', Naam: ' Auto Cars BV ', Actief: 'nee' }
-  const mapping = { klantnummer: 'Klantnr', klantnaam: 'Naam', status: 'Actief' }
+  const row = { Klant: '152', Omschrijving: ' AUTO CARS BV ', Actief: 'nee' }
+  const mapping = { klantnummer: 'Klant', klantnaam: 'Omschrijving', status: 'Actief' }
   const out = applyMapping(row, mapping)
   assert.equal(out.klantnummer, '152')
-  assert.equal(out.klantnaam, 'Auto Cars BV')
+  assert.equal(out.klantnaam, 'AUTO CARS BV')
   assert.equal(out.status, 'inactief')
-  assert.equal(out.adres, null)
+  assert.equal(out.grk5_a, null)
 })
