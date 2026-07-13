@@ -50,7 +50,7 @@ const kpiEls = {
   total: $('kpi-total'),
   actief: $('kpi-actief'),
   inactief: $('kpi-inactief'),
-  gemeenten: $('kpi-gemeenten')
+  groepen: $('kpi-groepen')
 }
 
 /** Vul de KPI-kaarten met de meegegeven statistiek. */
@@ -58,23 +58,19 @@ function renderKpis(s) {
   kpiEls.total.textContent = nlNumber.format(s.total || 0)
   kpiEls.actief.textContent = nlNumber.format(s.actief || 0)
   kpiEls.inactief.textContent = nlNumber.format(s.inactief || 0)
-  kpiEls.gemeenten.textContent = nlNumber.format(s.gemeenten || 0)
+  kpiEls.groepen.textContent = nlNumber.format(s.groepen || 0)
 }
 
 /** Kolomdefinities in ERP-volgorde. */
 const columnDefs = [
-  { headerName: 'Klantnr.', field: 'klantnummer', width: 120 },
-  { headerName: 'Klantnaam', field: 'klantnaam', flex: 2, minWidth: 200 },
-  { headerName: 'Adres', field: 'adres', flex: 2, minWidth: 180 },
-  { headerName: 'Postcode', field: 'postcode', width: 110 },
-  { headerName: 'Gemeente', field: 'gemeente', flex: 1, minWidth: 130 },
-  { headerName: 'Btw-nummer', field: 'btw_nummer', width: 150 },
-  { headerName: 'Telefoon', field: 'telefoon', width: 140 },
-  { headerName: 'E-mail', field: 'email', flex: 1, minWidth: 180 },
+  { headerName: 'Klantnr.', field: 'klantnummer', width: 140 },
+  { headerName: 'Klantnaam', field: 'klantnaam', flex: 3, minWidth: 240 },
+  { headerName: 'Grk5-a', field: 'grk5_a', width: 140 },
+  { headerName: 'Grk5-b', field: 'grk5_b', width: 140 },
   {
     headerName: 'Status',
     field: 'status',
-    width: 100,
+    width: 120,
     cellClass: (p) => (p.value === 'inactief' ? 'inactief' : '')
   }
 ]
@@ -239,13 +235,8 @@ const DETAIL_FIELDS = [
   { field: 'klantnummer', label: 'Klantnummer', readonly: true },
   { field: 'status', label: 'Status', type: 'select', options: ['actief', 'inactief'] },
   { field: 'klantnaam', label: 'Klantnaam', wide: true },
-  { field: 'adres', label: 'Adres', wide: true },
-  { field: 'postcode', label: 'Postcode' },
-  { field: 'gemeente', label: 'Gemeente' },
-  { field: 'land', label: 'Land' },
-  { field: 'btw_nummer', label: 'Btw-nummer' },
-  { field: 'telefoon', label: 'Telefoon' },
-  { field: 'email', label: 'E-mail' }
+  { field: 'grk5_a', label: 'Grk5-a' },
+  { field: 'grk5_b', label: 'Grk5-b' }
 ]
 
 const detailOverlay = $('detail-overlay')
@@ -395,13 +386,8 @@ detailOverlay.addEventListener('click', (e) => {
 const IMPORT_FIELDS = [
   ['klantnummer', 'Klantnummer *'],
   ['klantnaam', 'Klantnaam'],
-  ['adres', 'Adres'],
-  ['postcode', 'Postcode'],
-  ['gemeente', 'Gemeente'],
-  ['land', 'Land'],
-  ['btw_nummer', 'Btw-nummer'],
-  ['telefoon', 'Telefoon'],
-  ['email', 'E-mail'],
+  ['grk5_a', 'Grk5-a'],
+  ['grk5_b', 'Grk5-b'],
   ['status', 'Status']
 ]
 
