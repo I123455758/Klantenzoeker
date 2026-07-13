@@ -19,6 +19,48 @@ let lastMeta = { tookMs: 0, matchTotal: 0, browse: true, total: 0 }
 
 const nlNumber = new Intl.NumberFormat('nl-BE')
 
+// --- Toasts (tijdelijke meldingen) ------------------------------------------
+const toastsEl = $('toasts')
+
+/** Toon een korte melding rechtsonder. @param {'success'|'error'|'info'} type */
+function toast(message, type = 'info', ms = 3400) {
+  const el = document.createElement('div')
+  el.className = `toast ${type}`
+  const ic = document.createElement('span')
+  ic.className = 'toast-ic'
+  ic.textContent = type === 'success' ? '✅' : type === 'error' ? '⚠️' : 'ℹ️'
+  const text = document.createElement('span')
+  text.textContent = message
+  el.append(ic, text)
+  toastsEl.append(el)
+  const remove = () => {
+    el.classList.add('leaving')
+    setTimeout(() => el.remove(), 220)
+  }
+  const timer = setTimeout(remove, ms)
+  el.addEventListener('click', () => {
+    clearTimeout(timer)
+    remove()
+  })
+}
+
+// --- Statistiek-kaarten (KPI's) ---------------------------------------------
+const statsStrip = $('stats-strip')
+const kpiEls = {
+  total: $('kpi-total'),
+  actief: $('kpi-actief'),
+  inactief: $('kpi-inactief'),
+  gemeenten: $('kpi-gemeenten')
+}
+
+/** Vul de KPI-kaarten met de meegegeven statistiek. */
+function renderKpis(s) {
+  kpiEls.total.textContent = nlNumber.format(s.total || 0)
+  kpiEls.actief.textContent = nlNumber.format(s.actief || 0)
+  kpiEls.inactief.textContent = nlNumber.format(s.inactief || 0)
+  kpiEls.gemeenten.textContent = nlNumber.format(s.gemeenten || 0)
+}
+
 /** Kolomdefinities in ERP-volgorde. */
 const columnDefs = [
   { headerName: 'Klantnr.', field: 'klantnummer', width: 120 },
@@ -112,6 +154,9 @@ $('clear').addEventListener('click', () => {
   reload()
 })
 
+// "Klanten" in de zijbalk = terug naar de zoekweergave (focus op de zoekbalk).
+$('nav-klanten').addEventListener('click', () => searchInput.focus())
+
 // --- Donkere modus ----------------------------------------------------------
 function applyDark(on) {
   document.body.classList.toggle('dark', on)
@@ -137,8 +182,10 @@ async function runSeed() {
     statusEl.textContent = `Testdata klaar: ${nlNumber.format(res.total)} klanten`
     reload()
     await refreshEmptyState()
+    toast(`Testdata gegenereerd: ${nlNumber.format(res.total)} klanten.`, 'success')
   } catch (err) {
     statusEl.textContent = 'Seed mislukt: ' + (err?.message || err)
+    toast('Testdata genereren mislukt: ' + (err?.message || err), 'error')
   } finally {
     stop()
     btn.disabled = false
@@ -177,8 +224,10 @@ $('btn-export').addEventListener('click', async () => {
       return
     }
     statusEl.textContent = `Geëxporteerd: ${nlNumber.format(res.count)} klanten naar ${res.format.toUpperCase()} (${res.path})`
+    toast(`Geëxporteerd: ${nlNumber.format(res.count)} klanten (${res.format.toUpperCase()}).`, 'success')
   } catch (err) {
     statusEl.textContent = 'Export mislukt: ' + (err?.message || err)
+    toast('Export mislukt: ' + (err?.message || err), 'error')
   } finally {
     btn.disabled = false
   }
@@ -494,8 +543,10 @@ $('import-run').addEventListener('click', async () => {
     currentQuery = searchInput.value
     reload()
     await refreshEmptyState()
+    toast('Import klaar: ' + parts.join(', '), 'success')
   } catch (err) {
     $('import-msg').textContent = 'Import mislukt: ' + (err?.message || err)
+    toast('Import mislukt: ' + (err?.message || err), 'error')
   } finally {
     runBtn.disabled = false
   }
@@ -568,19 +619,48 @@ async function switchDatabase(fn) {
 $('set-db-open').addEventListener('click', () => switchDatabase(() => window.api.openDatabase()))
 $('set-db-new').addEventListener('click', () => switchDatabase(() => window.api.newDatabase()))
 
+$('set-db-clear').addEventListener('click', async () => {
+  $('settings-msg').textContent = 'Bezig…'
+  try {
+    const res = await window.api.clearDatabase()
+    if (!res || res.canceled) {
+      $('settings-msg').textContent = 'Geannuleerd.'
+      return
+    }
+    searchInput.value = ''
+    currentQuery = ''
+    reload()
+    await refreshDbInfo()
+    await refreshEmptyState()
+    $('settings-msg').textContent = 'Database geleegd.'
+    statusEl.textContent = 'Database geleegd — alle klanten verwijderd.'
+    toast('Database geleegd — alle klanten verwijderd.', 'success')
+  } catch (err) {
+    $('settings-msg').textContent = 'Mislukt: ' + (err?.message || err)
+    toast('Leegmaken mislukt: ' + (err?.message || err), 'error')
+  }
+})
+
 // --- Startpagina (lege database) --------------------------------------------
 const welcomeEl = $('welcome')
 
-/** Toon het welkomscherm alleen bij een lege database. @returns {Promise<number>} totaal */
+/**
+ * Ververs de statistiek (KPI-kaarten) en toon het welkomscherm bij een lege
+ * database. De KPI-strip verdwijnt bij een lege database (welkomscherm neemt over).
+ * @returns {Promise<number>} totaal aantal klanten
+ */
 async function refreshEmptyState() {
-  let total = 0
+  let s = { total: 0, actief: 0, inactief: 0, gemeenten: 0 }
   try {
-    total = (await window.api.stats()).total
+    s = await window.api.stats()
   } catch {
     /* stil */
   }
+  renderKpis(s)
+  const total = s.total || 0
   const empty = total === 0
   welcomeEl.classList.toggle('hidden', !empty)
+  statsStrip.classList.toggle('hidden', empty)
   if (empty) {
     statusEl.textContent = 'Lege database — importeer klanten of genereer testdata om te beginnen.'
     timingEl.textContent = ''

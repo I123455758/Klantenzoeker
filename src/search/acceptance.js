@@ -1,9 +1,9 @@
 import { search } from './searchEngine.js'
 
 /**
- * Acceptatietests voor de zoekmachine. Draait alle voorbeelden uit de bouwprompt
- * en controleert of de vaste fixtures (AUTO CARS BV / KL000152, René Dubois)
- * gevonden worden. Bedoeld om na het seeden even te draaien via IPC.
+ * Acceptatietests voor de zoekmachine. Draait alle voorbeelden uit ADR 0001
+ * en controleert of de vaste fixtures (AUTO CARS BV / 152, JIMÉNEZ MAÑA
+ * RECAMBIOS SRL / 777) gevonden worden. Bedoeld om na het seeden te draaien.
  */
 
 /**
@@ -16,32 +16,33 @@ import { search } from './searchEngine.js'
 
 /** @type {AcceptanceCase[]} */
 const CASES = [
-  // AUTO CARS BV (KL000152) — substring, losse tokens, hoofdletterongevoelig
-  { query: 'auto', expectKlantnummer: 'KL000152', topN: 50, note: 'substring begin' },
-  { query: 'cars', expectKlantnummer: 'KL000152', topN: 50, note: 'substring midden' },
-  { query: 'bv', expectKlantnummer: 'KL000152', topN: 200, note: 'kort token / rechtsvorm' },
-  { query: 'auto cars', expectKlantnummer: 'KL000152', topN: 20, note: 'twee tokens (AND)' },
-  { query: 'cars bv', expectKlantnummer: 'KL000152', topN: 20, note: 'twee tokens omgekeerd' },
-  { query: 'uto', expectKlantnummer: 'KL000152', topN: 100, note: 'binnenin woord' },
-  { query: 'ars', expectKlantnummer: 'KL000152', topN: 100, note: 'binnenin woord' },
-  { query: 'AUTO', expectKlantnummer: 'KL000152', topN: 50, note: 'hoofdletters' },
-  { query: 'Cars', expectKlantnummer: 'KL000152', topN: 50, note: 'gemengde case' },
-  { query: 'AUTO CARS BV', expectKlantnummer: 'KL000152', topN: 5, note: 'volledige naam' },
+  // AUTO CARS BV (152) — substring, losse tokens, hoofdletterongevoelig
+  { query: 'auto', expectKlantnummer: '152', topN: 50, note: 'substring begin' },
+  { query: 'cars', expectKlantnummer: '152', topN: 50, note: 'substring midden' },
+  { query: 'bv', expectKlantnummer: '152', topN: 200, note: 'kort token / rechtsvorm' },
+  { query: 'auto cars', expectKlantnummer: '152', topN: 20, note: 'twee tokens (AND)' },
+  { query: 'cars bv', expectKlantnummer: '152', topN: 20, note: 'twee tokens omgekeerd' },
+  { query: 'uto', expectKlantnummer: '152', topN: 100, note: 'binnenin woord' },
+  { query: 'ars', expectKlantnummer: '152', topN: 100, note: 'binnenin woord' },
+  { query: 'AUTO', expectKlantnummer: '152', topN: 50, note: 'hoofdletters' },
+  { query: 'Cars', expectKlantnummer: '152', topN: 50, note: 'gemengde case' },
+  { query: 'AUTO CARS BV', expectKlantnummer: '152', topN: 5, note: 'volledige naam' },
 
   // Typotolerantie (fuzzy)
-  { query: 'Aut Cars', expectKlantnummer: 'KL000152', topN: 20, note: 'typo/afkorting' },
-  { query: 'Carss', expectKlantnummer: 'KL000152', topN: 20, note: 'dubbele letter' },
-  { query: 'AutoCar', expectKlantnummer: 'KL000152', topN: 20, note: 'aaneengeschreven' },
-  { query: 'Autto', expectKlantnummer: 'KL000152', topN: 50, note: 'ingevoegde letter' },
+  { query: 'Aut Cars', expectKlantnummer: '152', topN: 20, note: 'typo/afkorting' },
+  { query: 'Carss', expectKlantnummer: '152', topN: 20, note: 'dubbele letter' },
+  { query: 'AutoCar', expectKlantnummer: '152', topN: 20, note: 'aaneengeschreven' },
+  { query: 'Autto', expectKlantnummer: '152', topN: 50, note: 'ingevoegde letter' },
 
-  // René Dubois (KL000777) — diacritiektolerantie
-  { query: 'rene', expectKlantnummer: 'KL000777', topN: 50, note: 'zonder accent' },
+  // JIMÉNEZ MAÑA RECAMBIOS SRL (777) — diacritiektolerantie
+  { query: 'jimenez', expectKlantnummer: '777', topN: 50, note: 'zonder accent' },
+  { query: 'mana', expectKlantnummer: '777', topN: 50, note: 'ñ zonder accent' },
+  { query: 'maña', expectKlantnummer: '777', topN: 50, note: 'met accent' },
+  { query: 'recambios', expectKlantnummer: '777', topN: 50, note: 'derde woord' },
 
-  // Klantnummervarianten -> altijd KL000152
-  { query: '152', expectKlantnummer: 'KL000152', topN: 20, note: 'cijfers zonder padding' },
-  { query: '000152', expectKlantnummer: 'KL000152', topN: 20, note: 'met voorloopnullen' },
-  { query: 'KL152', expectKlantnummer: 'KL000152', topN: 20, note: 'prefix zonder padding' },
-  { query: 'KL000152', expectKlantnummer: 'KL000152', topN: 5, note: 'exact klantnummer' }
+  // Klantnummervarianten -> altijd 152 (kale getallen)
+  { query: '152', expectKlantnummer: '152', topN: 20, note: 'kaal nummer' },
+  { query: '000152', expectKlantnummer: '152', topN: 20, note: 'met voorloopnullen' }
 ]
 
 /**

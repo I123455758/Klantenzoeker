@@ -5,7 +5,9 @@ import {
   getCustomerById,
   getCustomerByKlantnummer,
   updateCustomer,
-  listHistoriek
+  listHistoriek,
+  getStatistics,
+  deleteAllCustomers
 } from '../database/queries.js'
 import { search, clearCache, setFuzzyEnabled } from '../search/searchEngine.js'
 import { seedDatabase } from '../database/seed.js'
@@ -74,7 +76,7 @@ export function registerIpc(win) {
 
   // --- Statistiek / status ------------------------------------------------
   ipcMain.handle('stats', () => ({
-    total: countCustomers(),
+    ...getStatistics(),
     dbPath: settings.get('lastDbPath') || defaultDbPath()
   }))
 
@@ -219,6 +221,23 @@ export function registerIpc(win) {
     return { dbPath: res.filePath, total: countCustomers() }
   })
 
+  // Leeg de huidige database (verwijder alle klanten). Vraagt eerst bevestiging.
+  ipcMain.handle('db:clear', async () => {
+    const res = await dialog.showMessageBox(win, {
+      type: 'warning',
+      buttons: ['Annuleren', 'Alles verwijderen'],
+      defaultId: 0,
+      cancelId: 0,
+      title: 'Database leegmaken',
+      message: 'Alle klanten uit de huidige database verwijderen?',
+      detail: 'Deze actie kan niet ongedaan worden gemaakt. Het databasebestand blijft bestaan, maar wordt leeggemaakt.'
+    })
+    if (res.response !== 1) return { ok: false, canceled: true }
+    deleteAllCustomers()
+    clearCache()
+    return { ok: true, total: countCustomers() }
+  })
+
   logger.info('ipc', 'IPC-handlers geregistreerd')
 }
 
@@ -240,7 +259,8 @@ export function teardownIpc() {
     'import:run',
     'export',
     'db:open',
-    'db:new'
+    'db:new',
+    'db:clear'
   ]) {
     ipcMain.removeHandler(channel)
   }

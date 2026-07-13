@@ -22,20 +22,12 @@ function stmts() {
 function buildStatements(db) {
   const insertCols = [
     'klantnummer',
-    'klantnummer_norm',
-    'klantnummer_digits',
     'klantnaam',
-    'adres',
-    'postcode',
-    'gemeente',
-    'land',
-    'btw_nummer',
-    'telefoon',
-    'email',
+    'grk5_a',
+    'grk5_b',
     'status',
     'search_blob',
-    'extra_json',
-    'pdf_pad'
+    'extra_json'
   ]
   const placeholders = insertCols.map((c) => '@' + c).join(', ')
 
@@ -44,20 +36,13 @@ function buildStatements(db) {
     INSERT INTO customers (${insertCols.join(', ')})
     VALUES (${placeholders})
     ON CONFLICT(klantnummer) DO UPDATE SET
-      klantnummer_norm   = excluded.klantnummer_norm,
-      klantnummer_digits = excluded.klantnummer_digits,
-      klantnaam          = excluded.klantnaam,
-      adres              = excluded.adres,
-      postcode           = excluded.postcode,
-      gemeente           = excluded.gemeente,
-      land               = excluded.land,
-      btw_nummer         = excluded.btw_nummer,
-      telefoon           = excluded.telefoon,
-      email              = excluded.email,
-      status             = excluded.status,
-      search_blob        = excluded.search_blob,
-      extra_json         = COALESCE(excluded.extra_json, customers.extra_json),
-      updated_at         = datetime('now')
+      klantnaam   = excluded.klantnaam,
+      grk5_a      = excluded.grk5_a,
+      grk5_b      = excluded.grk5_b,
+      status      = excluded.status,
+      search_blob = excluded.search_blob,
+      extra_json  = COALESCE(excluded.extra_json, customers.extra_json),
+      updated_at  = datetime('now')
   `
 
   return {
@@ -95,16 +80,10 @@ export function toRow(c) {
   return {
     klantnummer: String(c.klantnummer ?? '').trim(),
     klantnaam: c.klantnaam ?? null,
-    adres: c.adres ?? null,
-    postcode: c.postcode ?? null,
-    gemeente: c.gemeente ?? null,
-    land: c.land ?? null,
-    btw_nummer: c.btw_nummer ?? null,
-    telefoon: c.telefoon ?? null,
-    email: c.email ?? null,
+    grk5_a: c.grk5_a ?? null,
+    grk5_b: c.grk5_b ?? null,
     status: c.status ?? 'actief',
     extra_json: c.extra_json ?? null,
-    pdf_pad: c.pdf_pad ?? null,
     ...derived
   }
 }
@@ -150,6 +129,20 @@ export function getCustomerByKlantnummer(klantnummer) {
 /** @returns {number} totaal aantal klanten */
 export function countCustomers() {
   return stmts().count.get().n
+}
+
+/**
+ * Kerncijfers voor het statistiek-dashboard (goedkope COUNT-queries).
+ * @returns {{ total: number, actief: number, inactief: number, gemeenten: number }}
+ */
+export function getStatistics() {
+  const s = stmts()
+  const total = s.count.get().n
+  const actief = s.countActief.get().n
+  const groepen = getDb()
+    .prepare("SELECT COUNT(DISTINCT grk5_a) AS n FROM customers WHERE grk5_a IS NOT NULL AND grk5_a <> ''")
+    .get().n
+  return { total, actief, inactief: total - actief, groepen }
 }
 
 /** @param {number} limit @param {number} offset */
@@ -206,7 +199,7 @@ export function updateCustomer(id, changes) {
 
     const merged = { ...current, ...changes }
     const derived = computeDerived(merged)
-    const setCols = [...editable, 'klantnummer_norm', 'klantnummer_digits', 'search_blob']
+    const setCols = [...editable, 'search_blob']
     const assignments = setCols.map((c) => `${c} = @${c}`).join(', ')
     db.prepare(
       `UPDATE customers SET ${assignments}, updated_at = datetime('now') WHERE id = @id`

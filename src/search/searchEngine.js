@@ -1,7 +1,7 @@
 import { getDb } from '../database/connection.js'
 import { countCustomers, pageAll } from '../database/queries.js'
 import { normalize, tokenize, trigrams } from './normalize.js'
-import { analyzeToken } from './klantnummer.js'
+import { klantnummerDigits } from './klantnummer.js'
 import { similarity } from './levenshtein.js'
 
 /**
@@ -72,9 +72,9 @@ function computeResults(q) {
 
   // ---- Tier 1: klantnummerlogica ----------------------------------------
   for (const raw of tokens) {
-    const info = analyzeToken(raw)
-    if (!info.isCandidate) continue
-    for (const hit of klantnummerMatches(info)) {
+    const digits = klantnummerDigits(raw)
+    if (!digits) continue
+    for (const hit of klantnummerMatches(digits)) {
       const prev = byId.get(hit.row.id)
       if (!prev || hit.score > prev.score) byId.set(hit.row.id, hit)
     }
@@ -113,11 +113,11 @@ function collate(a, b) {
 }
 
 /**
- * Zoek klanten via klantnummer (exact/contains op norm en cijfers).
- * @param {{ norm: string, digits: string }} info
+ * Zoek klanten via klantnummer (exact + contains op het kale getal).
+ * @param {string} digits kale cijferreeks (zonder voorloopnullen)
  * @returns {Array<{ row: any, score: number }>}
  */
-function klantnummerMatches(info) {
+function klantnummerMatches(digits) {
   const db = getDb()
   const out = []
   const seen = new Set()
@@ -126,32 +126,15 @@ function klantnummerMatches(info) {
     seen.add(row.id)
     out.push({ row, score })
   }
+  if (!digits) return out
 
-  // Exact: op genormaliseerd nummer of op cijferreeks (voorloopnullen genegeerd).
-  if (info.norm) {
-    add(db.prepare('SELECT * FROM customers WHERE klantnummer_norm = ?').get(info.norm), 100000)
-  }
-  if (info.digits) {
-    for (const r of db
-      .prepare('SELECT * FROM customers WHERE klantnummer_digits = ? LIMIT 50')
-      .all(info.digits)) {
-      add(r, 95000)
-    }
-  }
-  // Contains: cijferreeks of genormaliseerd nummer bevat het token.
-  if (info.digits) {
-    for (const r of db
-      .prepare("SELECT * FROM customers WHERE klantnummer_digits LIKE ? LIMIT 100")
-      .all('%' + info.digits + '%')) {
-      add(r, 60000)
-    }
-  }
-  if (info.norm && info.norm.length >= 2) {
-    for (const r of db
-      .prepare('SELECT * FROM customers WHERE klantnummer_norm LIKE ? LIMIT 100')
-      .all('%' + info.norm + '%')) {
-      add(r, 55000)
-    }
+  // Exact op het kale klantnummer (voorloopnullen zijn al verwijderd).
+  add(db.prepare('SELECT * FROM customers WHERE klantnummer = ?').get(digits), 100000)
+  // Contains: klantnummer bevat de cijferreeks.
+  for (const r of db
+    .prepare('SELECT * FROM customers WHERE klantnummer LIKE ? LIMIT 100')
+    .all('%' + digits + '%')) {
+    add(r, 60000)
   }
   return out
 }

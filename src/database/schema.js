@@ -1,21 +1,14 @@
 /**
  * SQLite-schema voor de klantenzoeker. Wordt idempotent uitgevoerd bij elke start.
  * FTS5 met trigram-tokenizer voor substring- én typotolerant zoeken.
+ *
+ * Datamodel volgt ADR 0001: de echte export heeft vier kolommen — Klant
+ * (kaal klantnummer), Omschrijving (klantnaam) en twee keer Grk5
+ * (groeperingscodes). Geen rijk klantprofiel.
  */
 
 /** Alle vaste (getypeerde) kolommen van de customers-tabel, in UI/import-volgorde. */
-export const CUSTOMER_COLUMNS = [
-  'klantnummer',
-  'klantnaam',
-  'adres',
-  'postcode',
-  'gemeente',
-  'land',
-  'btw_nummer',
-  'telefoon',
-  'email',
-  'status'
-]
+export const CUSTOMER_COLUMNS = ['klantnummer', 'klantnaam', 'grk5_a', 'grk5_b', 'status']
 
 export const SCHEMA_SQL = `
 PRAGMA journal_mode = WAL;
@@ -23,31 +16,21 @@ PRAGMA synchronous  = NORMAL;
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS customers (
-  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
-  klantnummer        TEXT NOT NULL UNIQUE,
-  klantnummer_norm   TEXT,
-  klantnummer_digits TEXT,
-  klantnaam          TEXT,
-  adres              TEXT,
-  postcode           TEXT,
-  gemeente           TEXT,
-  land               TEXT,
-  btw_nummer         TEXT,
-  telefoon           TEXT,
-  email              TEXT,
-  status             TEXT DEFAULT 'actief',
-  search_blob        TEXT,
-  extra_json         TEXT,
-  pdf_pad            TEXT,
-  created_at         TEXT DEFAULT (datetime('now')),
-  updated_at         TEXT DEFAULT (datetime('now'))
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  klantnummer   TEXT NOT NULL UNIQUE,   -- kaal getal, unieke sleutel voor upsert
+  klantnaam     TEXT,
+  grk5_a        TEXT,                    -- eerste Grk5-kolom (groeperingscode)
+  grk5_b        TEXT,                    -- tweede Grk5-kolom (groeperingscode)
+  status        TEXT DEFAULT 'actief',   -- actief | inactief
+  search_blob   TEXT,                    -- genormaliseerde samenvoeging zoekvelden
+  extra_json    TEXT,                    -- vangnet voor onverwachte extra kolommen
+  created_at    TEXT DEFAULT (datetime('now')),
+  updated_at    TEXT DEFAULT (datetime('now'))
 );
 
-CREATE INDEX IF NOT EXISTS idx_klantnummer_norm   ON customers(klantnummer_norm);
-CREATE INDEX IF NOT EXISTS idx_klantnummer_digits ON customers(klantnummer_digits);
-CREATE INDEX IF NOT EXISTS idx_postcode           ON customers(postcode);
-CREATE INDEX IF NOT EXISTS idx_status             ON customers(status);
-CREATE INDEX IF NOT EXISTS idx_klantnaam          ON customers(klantnaam);
+CREATE INDEX IF NOT EXISTS idx_klantnummer ON customers(klantnummer);
+CREATE INDEX IF NOT EXISTS idx_status      ON customers(status);
+CREATE INDEX IF NOT EXISTS idx_klantnaam   ON customers(klantnaam);
 
 -- Substring + typotolerant zoeken via trigram-tokenizer.
 CREATE VIRTUAL TABLE IF NOT EXISTS customers_fts USING fts5(

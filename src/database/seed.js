@@ -4,7 +4,9 @@ import { logger } from '../utils/logger.js'
 
 /**
  * Genereer een grote dummydataset om zoekprestaties realistisch te testen.
- * Bevat gegarandeerd de acceptatie-klanten (AUTO CARS BV, René, KL000152).
+ * Datamodel volgt ADR 0001: kale klantnummers + vier kolommen.
+ * Bevat gegarandeerd de acceptatie-klanten (AUTO CARS BV, JIMÉNEZ MAÑA
+ * RECAMBIOS SRL, VAN WEZEL AUTOPARTS NV).
  */
 
 const VOORNAMEN = ['Jan', 'Piet', 'Marie', 'Sofie', 'René', 'Ahmed', 'Lucas', 'Emma', 'Noah', 'Lien', 'Wout', 'Fatima', 'Tom', 'Elke', 'Karel', 'Nele', 'Bram', 'Iris', 'Joris', 'Anke']
@@ -14,8 +16,9 @@ const ACHTERNAMEN = ['Peeters', 'Janssens', 'Maes', 'Jacobs', 'Mertens', 'Willem
 const BEDRIJF_A = ['Rapid', 'Bouw', 'Groen', 'Tech', 'Prima', 'Euro', 'Belga', 'Noord', 'Zuid', 'Metro', 'Delta', 'Alpha', 'Vlaams', 'Smart', 'Digi', 'Aqua', 'Solar', 'Logis', 'Trans', 'Food']
 const BEDRIJF_B = ['Motors', 'Bouw', 'Services', 'Solutions', 'Trading', 'Consult', 'Group', 'Systems', 'Works', 'Center', 'Partners', 'Invest', 'Logistics', 'Products', 'Retail', 'Design', 'Care', 'Energy', 'Media', 'Foods']
 const RECHTSVORM = ['BV', 'NV', 'BVBA', 'VOF', 'CV', 'Comm.V']
-const STRATEN = ['Kerkstraat', 'Stationsstraat', 'Dorpsstraat', 'Nieuwstraat', 'Schoolstraat', 'Molenweg', 'Industrieweg', 'Marktplein', 'Kloosterstraat', 'Veldstraat']
-const GEMEENTEN = [['Antwerpen', '2000'], ['Gent', '9000'], ['Brugge', '8000'], ['Leuven', '3000'], ['Hasselt', '3500'], ['Mechelen', '2800'], ['Aalst', '9300'], ['Kortrijk', '8500'], ['Genk', '3600'], ['Oostende', '8400']]
+// Groeperingscodes (Grk5): een klein setje realistische codes.
+const GRK_A = ['G100', 'G200', 'G300', 'G400', 'G500', 'G600']
+const GRK_B = ['A01', 'A02', 'B01', 'B02', 'C01', 'C02']
 
 function pick(arr, i) {
   return arr[i % arr.length]
@@ -25,39 +28,33 @@ function rnd(n) {
 }
 
 /**
- * Bouw één dummyklant.
- * @param {number} i volgnummer (1-based)
+ * Bouw één dummyklant volgens het echte datamodel.
+ * @param {number} i volgnummer (1-based) — wordt het kale klantnummer
  * @returns {Record<string, any>}
  */
 function makeCustomer(i) {
   const isBedrijf = i % 3 !== 0
-  const [gemeente, postcode] = pick(GEMEENTEN, rnd(GEMEENTEN.length))
-  let klantnaam
-  if (isBedrijf) {
-    klantnaam = `${pick(BEDRIJF_A, rnd(BEDRIJF_A.length))} ${pick(BEDRIJF_B, rnd(BEDRIJF_B.length))} ${pick(RECHTSVORM, rnd(RECHTSVORM.length))}`
-  } else {
-    klantnaam = `${pick(VOORNAMEN, rnd(VOORNAMEN.length))} ${pick(ACHTERNAMEN, rnd(ACHTERNAMEN.length))}`
-  }
-  const nr = String(i).padStart(6, '0')
+  const klantnaam = isBedrijf
+    ? `${pick(BEDRIJF_A, rnd(BEDRIJF_A.length))} ${pick(BEDRIJF_B, rnd(BEDRIJF_B.length))} ${pick(RECHTSVORM, rnd(RECHTSVORM.length))}`
+    : `${pick(VOORNAMEN, rnd(VOORNAMEN.length))} ${pick(ACHTERNAMEN, rnd(ACHTERNAMEN.length))}`
   return {
-    klantnummer: `KL${nr}`,
+    klantnummer: String(i), // kaal getal
     klantnaam,
-    adres: `${pick(STRATEN, rnd(STRATEN.length))} ${1 + rnd(200)}`,
-    postcode,
-    gemeente,
-    land: 'België',
-    btw_nummer: `BE0${100000000 + rnd(899999999)}`,
-    telefoon: `0${4 + rnd(6)}${String(rnd(100000000)).padStart(8, '0')}`,
-    email: `info${i}@example.be`,
+    grk5_a: pick(GRK_A, rnd(GRK_A.length)),
+    grk5_b: pick(GRK_B, rnd(GRK_B.length)),
     status: i % 50 === 0 ? 'inactief' : 'actief'
   }
 }
 
 /** Vaste acceptatie-klanten zodat de zoekvoorbeelden altijd slagen. */
 const FIXTURES = [
-  { klantnummer: 'KL000152', klantnaam: 'AUTO CARS BV', adres: 'Industrieweg 12', postcode: '2000', gemeente: 'Antwerpen', land: 'België', btw_nummer: 'BE0123456789', telefoon: '032001234', email: 'info@autocars.be', status: 'actief' },
-  { klantnummer: 'KL000777', klantnaam: 'René Dubois', adres: 'Kerkstraat 7', postcode: '9000', gemeente: 'Gent', land: 'België', btw_nummer: 'BE0987654321', telefoon: '092007777', email: 'rene@dubois.be', status: 'actief' }
+  { klantnummer: '152', klantnaam: 'AUTO CARS BV', grk5_a: 'G100', grk5_b: 'A01', status: 'actief' },
+  { klantnummer: '777', klantnaam: 'JIMÉNEZ MAÑA RECAMBIOS SRL', grk5_a: 'G200', grk5_b: 'B01', status: 'actief' },
+  { klantnummer: '1379', klantnaam: 'VAN WEZEL AUTOPARTS NV', grk5_a: 'G300', grk5_b: 'C01', status: 'actief' }
 ]
+
+/** Volgnummers die door fixtures bezet zijn — overslaan bij het genereren. */
+const FIXTURE_NUMBERS = new Set(FIXTURES.map((f) => Number(f.klantnummer)))
 
 /**
  * Vul de database met testdata.
@@ -74,13 +71,11 @@ export function seedDatabase(count = 100000, onProgress) {
 
   const BATCH = 5000
   let done = 0
-  // Fixtures gebruiken i=152 en i=777; sla die volgnummers over om conflicten te vermijden.
-  const skip = new Set([152, 777])
   let i = 1 // doorlopende teller: nooit een klantnummer hergebruiken tussen batches
   while (done < count) {
     const batch = []
     while (batch.length < BATCH && done < count) {
-      if (!skip.has(i)) {
+      if (!FIXTURE_NUMBERS.has(i)) {
         batch.push(makeCustomer(i))
         done++
       }

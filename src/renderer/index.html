@@ -11,37 +11,68 @@
   </head>
   <body>
     <div id="app">
-      <header class="toolbar">
+      <aside class="sidebar">
         <div class="brand">
           <span class="brand-logo">🔎</span>
-          <span class="brand-name">Klantenzoeker</span>
+          <span class="brand-text">
+            <span class="brand-name">Klantenzoeker</span>
+            <span class="brand-sub">Klantenbeheer</span>
+          </span>
         </div>
-        <div class="search-wrap">
-          <span class="search-icon">🔍</span>
-          <input
-            id="search"
-            type="text"
-            placeholder="Zoek op naam, klantnummer, adres, btw, telefoon of e-mail…"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button id="clear" class="icon-btn" title="Wissen">×</button>
+
+        <nav class="nav">
+          <div class="nav-label">Overzicht</div>
+          <button class="nav-item active" id="nav-klanten"><span class="nav-ic">👥</span> Klanten</button>
+
+          <div class="nav-label">Gegevens</div>
+          <button class="nav-item" id="btn-import" title="Excel importeren"><span class="nav-ic">📥</span> Importeren</button>
+          <button class="nav-item" id="btn-pdf" title="PDF importeren"><span class="nav-ic">📄</span> PDF importeren</button>
+          <button class="nav-item" id="btn-export" title="Resultaten exporteren (Excel/CSV/PDF)"><span class="nav-ic">📤</span> Exporteren</button>
+
+          <div class="nav-label">Extra</div>
+          <button class="nav-item" id="btn-seed" title="Vul testdata (100k)"><span class="nav-ic">⚡</span> Testdata</button>
+          <button class="nav-item" id="btn-accept" title="Acceptatietests draaien"><span class="nav-ic">✓</span> Tests</button>
+        </nav>
+
+        <div class="sidebar-foot">
+          <button class="nav-item" id="btn-dark" title="Donkere modus wisselen"><span class="nav-ic">◐</span> Donkere modus</button>
+          <button class="nav-item" id="btn-settings" title="Instellingen"><span class="nav-ic">⚙</span> Instellingen</button>
         </div>
-        <div class="actions">
-          <button id="btn-import" class="btn primary" title="Excel importeren">
-            <span class="ic">📥</span> Importeren
-          </button>
-          <button id="btn-pdf" class="btn" title="PDF importeren"><span class="ic">📄</span> PDF</button>
-          <button id="btn-export" class="btn" title="Resultaten exporteren (Excel/CSV/PDF)">
-            <span class="ic">📤</span> Exporteren
-          </button>
-          <span class="sep"></span>
-          <button id="btn-seed" class="btn subtle" title="Vul testdata (100k)">Testdata</button>
-          <button id="btn-accept" class="btn subtle" title="Acceptatietests draaien">Tests</button>
-          <button id="btn-dark" class="icon-btn" title="Donkere modus">◐</button>
-          <button id="btn-settings" class="icon-btn" title="Instellingen">⚙</button>
-        </div>
-      </header>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input
+              id="search"
+              type="text"
+              placeholder="Zoek op naam, klantnummer, adres, btw, telefoon of e-mail…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button id="clear" class="icon-btn" title="Wissen">×</button>
+          </div>
+        </header>
+
+        <section class="stats-strip" id="stats-strip">
+          <div class="kpi">
+            <span class="kpi-ic">👥</span>
+            <div class="kpi-text"><span class="kpi-value" id="kpi-total">—</span><span class="kpi-label">Totaal klanten</span></div>
+          </div>
+          <div class="kpi kpi-ok">
+            <span class="kpi-ic">✅</span>
+            <div class="kpi-text"><span class="kpi-value" id="kpi-actief">—</span><span class="kpi-label">Actief</span></div>
+          </div>
+          <div class="kpi kpi-mut">
+            <span class="kpi-ic">💤</span>
+            <div class="kpi-text"><span class="kpi-value" id="kpi-inactief">—</span><span class="kpi-label">Inactief</span></div>
+          </div>
+          <div class="kpi">
+            <span class="kpi-ic">📍</span>
+            <div class="kpi-text"><span class="kpi-value" id="kpi-gemeenten">—</span><span class="kpi-label">Gemeenten</span></div>
+          </div>
+        </section>
 
       <div id="stage">
         <div id="grid" class="ag-theme-alpine grid"></div>
@@ -79,11 +110,15 @@
         </section>
       </div>
 
-      <footer class="statusbar">
-        <span id="status">Bezig met laden…</span>
-        <span id="timing" class="timing"></span>
-      </footer>
+        <footer class="statusbar">
+          <span id="status">Bezig met laden…</span>
+          <span id="timing" class="timing"></span>
+        </footer>
+      </main>
     </div>
+
+    <!-- Toasts (tijdelijke meldingen) -->
+    <div id="toasts" class="toasts" aria-live="polite"></div>
 
     <!-- Instellingen -->
     <div id="settings-overlay" class="overlay hidden">
@@ -115,6 +150,11 @@
           <div class="row">
             <button id="set-db-open" class="ghost">Database openen…</button>
             <button id="set-db-new" class="ghost">Nieuwe database…</button>
+          </div>
+          <div class="row">
+            <button id="set-db-clear" class="ghost danger" title="Verwijder alle klanten uit de huidige database">
+              Database leegmaken…
+            </button>
           </div>
         </div>
         <footer class="modal-foot">

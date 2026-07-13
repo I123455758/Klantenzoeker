@@ -47,7 +47,9 @@ const api = {
   exportResults: (query) => ipcRenderer.invoke('export', { query }),
 
   openDatabase: () => ipcRenderer.invoke('db:open'),
-  newDatabase: () => ipcRenderer.invoke('db:new')
+  newDatabase: () => ipcRenderer.invoke('db:new'),
+  /** Leeg de huidige database (vraagt in main om bevestiging). */
+  clearDatabase: () => ipcRenderer.invoke('db:clear')
 }
 
 contextBridge.exposeInMainWorld('api', api)
