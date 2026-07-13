@@ -6,10 +6,12 @@ directories:
   output: dist
   buildResources: build
 
-# Alleen de gebouwde output en het manifest meeleveren.
+# Gebouwde output, manifest én de node_modules (electron-builder snoeit
+# automatisch de devDependencies eruit; de productie-afhankelijkheden blijven).
 files:
   - out/**
   - package.json
+  - node_modules/**
 
 # Native/asset-modules moeten buiten de asar leven:
 # - better-sqlite3: native .node-binary
