@@ -142,6 +142,11 @@ export function getCustomerById(id) {
   return stmts().getById.get(id)
 }
 
+/** @param {string} klantnummer */
+export function getCustomerByKlantnummer(klantnummer) {
+  return stmts().getByKlantnummer.get(klantnummer)
+}
+
 /** @returns {number} totaal aantal klanten */
 export function countCustomers() {
   return stmts().count.get().n

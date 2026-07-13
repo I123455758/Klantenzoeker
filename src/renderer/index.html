@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Klantenzoeker</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="toolbar">
+        <div class="search-wrap">
+          <input
+            id="search"
+            type="text"
+            placeholder="Zoek op naam, klantnummer, adres, btw, telefoon of e-mail…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="clear" class="ghost" title="Wissen">×</button>
+        </div>
+        <div class="actions">
+          <button id="btn-seed" class="ghost" title="Vul testdata (100k)">Testdata</button>
+          <button id="btn-accept" class="ghost" title="Acceptatietests draaien">Tests</button>
+          <button id="btn-dark" class="ghost" title="Donkere modus">◐</button>
+        </div>
+      </header>
+
+      <div id="grid" class="ag-theme-alpine grid"></div>
+
+      <footer class="statusbar">
+        <span id="status">Bezig met laden…</span>
+        <span id="timing" class="timing"></span>
+      </footer>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

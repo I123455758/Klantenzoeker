@@ -1,0 +1,43 @@
+import { contextBridge, ipcRenderer } from 'electron'
+
+/**
+ * Veilige, expliciete brug tussen renderer en main. De renderer krijgt geen
+ * directe toegang tot Node of de database — alleen deze afgebakende methodes.
+ */
+
+const api = {
+  /** @param {{ query: string, offset?: number, limit?: number }} params */
+  search: (params) => ipcRenderer.invoke('search', params),
+
+  /** @param {number} id */
+  getCustomer: (id) => ipcRenderer.invoke('customer:get', id),
+  /** @param {string} klantnummer */
+  getCustomerByKlantnummer: (klantnummer) =>
+    ipcRenderer.invoke('customer:getByKlantnummer', klantnummer),
+  /** @param {number} id @param {Record<string, any>} changes */
+  updateCustomer: (id, changes) => ipcRenderer.invoke('customer:update', { id, changes }),
+  /** @param {number} id */
+  getHistoriek: (id) => ipcRenderer.invoke('customer:historiek', id),
+
+  stats: () => ipcRenderer.invoke('stats'),
+
+  getSettings: () => ipcRenderer.invoke('settings:getAll'),
+  /** @param {string} key @param {any} value */
+  setSetting: (key, value) => ipcRenderer.invoke('settings:set', { key, value }),
+
+  /** @param {number} [count] */
+  seed: (count) => ipcRenderer.invoke('seed', count),
+  /** @param {(pct: number) => void} cb */
+  onSeedProgress: (cb) => {
+    const listener = (_e, pct) => cb(pct)
+    ipcRenderer.on('seed:progress', listener)
+    return () => ipcRenderer.removeListener('seed:progress', listener)
+  },
+
+  acceptance: () => ipcRenderer.invoke('acceptance'),
+
+  openDatabase: () => ipcRenderer.invoke('db:open'),
+  newDatabase: () => ipcRenderer.invoke('db:new')
+}
+
+contextBridge.exposeInMainWorld('api', api)

@@ -9,8 +9,10 @@ import { logger } from '../utils/logger.js'
 
 const VOORNAMEN = ['Jan', 'Piet', 'Marie', 'Sofie', 'René', 'Ahmed', 'Lucas', 'Emma', 'Noah', 'Lien', 'Wout', 'Fatima', 'Tom', 'Elke', 'Karel', 'Nele', 'Bram', 'Iris', 'Joris', 'Anke']
 const ACHTERNAMEN = ['Peeters', 'Janssens', 'Maes', 'Jacobs', 'Mertens', 'Willems', 'Claes', 'Goossens', 'Wouters', 'De Smet', 'Dubois', 'Lambert', 'Martin', 'Vermeulen', 'Declercq', 'Aerts', 'Segers', 'Hermans', 'Van Damme', 'Coppens']
-const BEDRIJF_A = ['Auto', 'Bouw', 'Groen', 'Tech', 'Prima', 'Euro', 'Belga', 'Noord', 'Zuid', 'Metro', 'Delta', 'Alpha', 'Vlaams', 'Smart', 'Digi', 'Aqua', 'Solar', 'Logis', 'Trans', 'Food']
-const BEDRIJF_B = ['Cars', 'Bouw', 'Services', 'Solutions', 'Trading', 'Consult', 'Group', 'Systems', 'Works', 'Center', 'Partners', 'Invest', 'Logistics', 'Products', 'Retail', 'Design', 'Care', 'Energy', 'Media', 'Foods']
+// 'Auto' en 'Cars' zijn bewust weggelaten: die reserveren we voor de vaste
+// acceptatie-fixture AUTO CARS BV zodat die klant uniek en vindbaar blijft.
+const BEDRIJF_A = ['Rapid', 'Bouw', 'Groen', 'Tech', 'Prima', 'Euro', 'Belga', 'Noord', 'Zuid', 'Metro', 'Delta', 'Alpha', 'Vlaams', 'Smart', 'Digi', 'Aqua', 'Solar', 'Logis', 'Trans', 'Food']
+const BEDRIJF_B = ['Motors', 'Bouw', 'Services', 'Solutions', 'Trading', 'Consult', 'Group', 'Systems', 'Works', 'Center', 'Partners', 'Invest', 'Logistics', 'Products', 'Retail', 'Design', 'Care', 'Energy', 'Media', 'Foods']
 const RECHTSVORM = ['BV', 'NV', 'BVBA', 'VOF', 'CV', 'Comm.V']
 const STRATEN = ['Kerkstraat', 'Stationsstraat', 'Dorpsstraat', 'Nieuwstraat', 'Schoolstraat', 'Molenweg', 'Industrieweg', 'Marktplein', 'Kloosterstraat', 'Veldstraat']
 const GEMEENTEN = [['Antwerpen', '2000'], ['Gent', '9000'], ['Brugge', '8000'], ['Leuven', '3000'], ['Hasselt', '3500'], ['Mechelen', '2800'], ['Aalst', '9300'], ['Kortrijk', '8500'], ['Genk', '3600'], ['Oostende', '8400']]
@@ -74,12 +76,15 @@ export function seedDatabase(count = 100000, onProgress) {
   let done = 0
   // Fixtures gebruiken i=152 en i=777; sla die volgnummers over om conflicten te vermijden.
   const skip = new Set([152, 777])
-  for (let start = 1; done < count; start += BATCH) {
+  let i = 1 // doorlopende teller: nooit een klantnummer hergebruiken tussen batches
+  while (done < count) {
     const batch = []
-    for (let i = start; batch.length < BATCH && done < count; i++) {
-      if (skip.has(i)) continue
-      batch.push(makeCustomer(i))
-      done++
+    while (batch.length < BATCH && done < count) {
+      if (!skip.has(i)) {
+        batch.push(makeCustomer(i))
+        done++
+      }
+      i++
     }
     bulkInsert(batch)
     if (onProgress) onProgress(Math.round((done / count) * 100))

@@ -22,7 +22,13 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
-        input: { index: resolve(__dirname, 'src/preload/index.js') }
+        input: { index: resolve(__dirname, 'src/preload/index.js') },
+        // Forceer CommonJS met .js-extensie zodat het preload-pad in main klopt
+        // en Electron het betrouwbaar laadt (geen ESM-preload-randgevallen).
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].js'
+        }
       }
     }
   },
