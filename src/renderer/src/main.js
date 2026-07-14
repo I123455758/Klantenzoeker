@@ -163,6 +163,72 @@ $('btn-dark').addEventListener('click', async () => {
   await window.api.setSetting('darkMode', on)
 })
 
+// --- Bedrijfswissel (aparte database per firma) -----------------------------
+const companySwitch = $('company-switch')
+let activeCompanyCode = null
+
+const CHECK_SVG =
+  '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4 10-10"/></svg>'
+
+/** Maak een gekleurd bedrijfsbadge-element (code als tekst — nooit als HTML). */
+function badge(code) {
+  const b = document.createElement('span')
+  b.className = 'badge'
+  b.dataset.code = code
+  b.textContent = code
+  return b
+}
+
+/** Teken de bedrijfsknoppen in de zijbalk en markeer het actieve bedrijf. */
+function renderCompanies(companies, active) {
+  activeCompanyCode = active
+  companySwitch.innerHTML = ''
+  for (const c of companies) {
+    const btn = document.createElement('button')
+    btn.className = 'company-item' + (c.code === active ? ' active' : '')
+    btn.dataset.code = c.code
+    btn.setAttribute('role', 'tab')
+    btn.title = c.naam || c.code
+    const name = document.createElement('span')
+    name.className = 'company-name'
+    name.textContent = c.naam || c.code
+    btn.append(badge(c.code), name)
+    btn.insertAdjacentHTML('beforeend', CHECK_SVG) // constante markup, geen invoer
+    btn.addEventListener('click', () => switchCompany(c.code))
+    companySwitch.append(btn)
+  }
+}
+
+async function loadCompanies() {
+  try {
+    const { companies, active } = await window.api.listCompanies()
+    renderCompanies(companies, active)
+  } catch (err) {
+    console.error('Bedrijven laden mislukt:', err)
+  }
+}
+
+/** Wissel naar de database van een ander bedrijf. */
+async function switchCompany(code) {
+  if (code === activeCompanyCode) return
+  statusEl.textContent = `Overschakelen naar ${code}…`
+  try {
+    const res = await window.api.setCompany(code)
+    activeCompanyCode = res.active
+    for (const el of companySwitch.querySelectorAll('.company-item')) {
+      el.classList.toggle('active', el.dataset.code === activeCompanyCode)
+    }
+    searchInput.value = ''
+    currentQuery = ''
+    reload()
+    await refreshEmptyState()
+    toast(`Bedrijf: ${code}`, 'info')
+  } catch (err) {
+    statusEl.textContent = 'Wisselen mislukt: ' + (err?.message || err)
+    toast('Bedrijf wisselen mislukt: ' + (err?.message || err), 'error')
+  }
+}
+
 // --- Testdata (seed) --------------------------------------------------------
 async function runSeed() {
   const btn = $('btn-seed')
@@ -456,6 +522,26 @@ function collectMapping() {
   return mapping
 }
 
+/** Toon in het importvenster welk bedrijf gedetecteerd is (bepaalt de database). */
+function renderImportBedrijf(bedrijf) {
+  const el = $('import-bedrijf')
+  el.innerHTML = ''
+  if (!bedrijf || !bedrijf.code) {
+    el.classList.add('hidden')
+    return
+  }
+  const text = document.createElement('span')
+  text.className = 'ib-text'
+  const strong = document.createElement('strong')
+  strong.textContent = `${bedrijf.code} — ${bedrijf.naam || ''}`
+  const sub = document.createElement('span')
+  sub.className = 'muted'
+  sub.textContent = `Deze klanten komen in de aparte database van ${bedrijf.code}.`
+  text.append(strong, sub)
+  el.append(badge(bedrijf.code), text)
+  el.classList.remove('hidden')
+}
+
 /** Gedeelde importflow voor Excel en PDF. @param {() => Promise<any>} analyzeFn */
 async function startImport(analyzeFn, soort) {
   $('import-msg').textContent = ''
@@ -467,6 +553,7 @@ async function startImport(analyzeFn, soort) {
       return
     }
     importData = data
+    renderImportBedrijf(data.bedrijf)
     sheetSelect.innerHTML = ''
     data.sheets.forEach((s, i) => sheetSelect.add(new Option(`${s.name} (${s.rowCount})`, String(i))))
     sheetSelect.value = '0'
@@ -522,11 +609,16 @@ $('import-run').addEventListener('click', async () => {
     ]
     if (res.skipped) parts.push(`${nlNumber.format(res.skipped)} overgeslagen`)
     if (res.marked) parts.push(`${nlNumber.format(res.marked)} inactief gemarkeerd`)
-    statusEl.textContent = 'Import klaar: ' + parts.join(', ')
-    currentQuery = searchInput.value
+    const prefix = res.company?.code ? `Import ${res.company.code} klaar: ` : 'Import klaar: '
+    statusEl.textContent = prefix + parts.join(', ')
+    // De import kan naar de database van het gedetecteerde bedrijf zijn gerouteerd;
+    // ververs de bedrijfswissel en toon die klanten (zonder oude zoekterm).
+    await loadCompanies()
+    searchInput.value = ''
+    currentQuery = ''
     reload()
     await refreshEmptyState()
-    toast('Import klaar: ' + parts.join(', '), 'success')
+    toast(prefix + parts.join(', '), 'success')
   } catch (err) {
     $('import-msg').textContent = 'Import mislukt: ' + (err?.message || err)
     toast('Import mislukt: ' + (err?.message || err), 'error')
@@ -543,6 +635,7 @@ async function refreshDbInfo() {
     const stats = await window.api.stats()
     $('set-dbpath').textContent = stats.dbPath || '—'
     $('set-count').textContent = nlNumber.format(stats.total)
+    $('set-company').textContent = stats.company || '—'
   } catch {
     /* stil */
   }
@@ -671,6 +764,11 @@ async function init() {
     applyDark(!!s.darkMode)
   } catch {
     applyDark(false)
+  }
+  try {
+    await loadCompanies()
+  } catch (err) {
+    console.error(err)
   }
   try {
     await refreshEmptyState()

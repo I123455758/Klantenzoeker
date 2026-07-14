@@ -18,6 +18,22 @@ export function defaultDbPath() {
 }
 
 /**
+ * Databasepad voor één bedrijf. Elk bedrijf heeft een eigen bestand omdat de
+ * klantnummers tussen bedrijven overlappen.
+ * @param {string} code bedrijfsafkorting, bv. 'VWE'
+ * @returns {string}
+ */
+export function companyDbPath(code) {
+  const c = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'VWE'
+  return join(app.getPath('userData'), `klantenzoeker-${c}.db`)
+}
+
+/** Open de database van een bedrijf (op basis van zijn code). */
+export function openCompany(code) {
+  return openDatabase(companyDbPath(code))
+}
+
+/**
  * Open (of heropen) de database op het gegeven pad en pas het schema toe.
  * @param {string} [dbPath]
  * @returns {import('better-sqlite3').Database}

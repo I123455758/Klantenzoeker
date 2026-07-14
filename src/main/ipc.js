@@ -1,5 +1,12 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron'
-import { openDatabase, defaultDbPath, closeDatabase } from '../database/connection.js'
+import { openDatabase, openCompany, defaultDbPath, closeDatabase } from '../database/connection.js'
+import {
+  parseBedrijf,
+  registerCompany,
+  listCompanies,
+  activeCompany,
+  setActiveCompany
+} from '../database/companies.js'
 import {
   countCustomers,
   getCustomerById,
@@ -77,8 +84,25 @@ export function registerIpc(win) {
   // --- Statistiek / status ------------------------------------------------
   ipcMain.handle('stats', () => ({
     ...getStatistics(),
-    dbPath: settings.get('lastDbPath') || defaultDbPath()
+    dbPath: settings.get('lastDbPath') || defaultDbPath(),
+    company: activeCompany()
   }))
+
+  // --- Bedrijven (aparte database per firma) ------------------------------
+  ipcMain.handle('company:list', () => ({
+    companies: listCompanies(),
+    active: activeCompany()
+  }))
+
+  ipcMain.handle('company:set', (_e, code) => {
+    const c = typeof code === 'string' ? code.trim().toUpperCase() : ''
+    if (!c) throw new Error('Ongeldige bedrijfscode')
+    registerCompany(c)
+    openCompany(c)
+    setActiveCompany(c)
+    clearCache()
+    return { active: c, ...getStatistics() }
+  })
 
   // --- Instellingen -------------------------------------------------------
   ipcMain.handle('settings:getAll', () => settings.getAll())
@@ -120,11 +144,14 @@ export function registerIpc(win) {
 
     const filePath = res.filePaths[0]
     const sheets = await readWorkbook(filePath)
-    lastImport = { filePath, sheets }
+    // Bedrijf uit het "Bedrijf"-veld van de export (bepaalt de doeldatabase).
+    const bedrijf = parseBedrijf(sheets.find((s) => s.bedrijfRaw)?.bedrijfRaw)
+    lastImport = { filePath, sheets, bedrijf }
 
     // Alleen een lichte voorbeeldweergave terug naar de renderer.
     return {
       filePath,
+      bedrijf,
       sheets: sheets.map((s) => ({
         name: s.name,
         headers: s.headers,
@@ -175,11 +202,21 @@ export function registerIpc(win) {
       lastImport.sheets.find((s) => s.name === sheetName) || lastImport.sheets[0]
     if (!sheet) throw new Error('Werkblad niet gevonden.')
 
+    // Route de import naar de database van het gedetecteerde bedrijf, zodat
+    // klanten van verschillende firma's elkaar nooit overschrijven.
+    const bedrijf = lastImport.bedrijf
+    if (bedrijf?.code) {
+      registerCompany(bedrijf.code, bedrijf.naam)
+      openCompany(bedrijf.code)
+      setActiveCompany(bedrijf.code)
+      clearCache()
+    }
+
     const result = importRows(sheet.rows, mapping, {
       markMissingInactive: payload?.markMissingInactive === true
     })
     lastImport = null // geheugen vrijgeven
-    return result
+    return { ...result, company: bedrijf || null }
   })
 
   // --- Export -------------------------------------------------------------
@@ -253,6 +290,8 @@ export function teardownIpc() {
     'customer:update',
     'customer:historiek',
     'stats',
+    'company:list',
+    'company:set',
     'settings:getAll',
     'settings:set',
     'seed',

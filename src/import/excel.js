@@ -201,15 +201,37 @@ function buildSheetFromMatrix(name, matrix) {
 function readHtmlWorkbook(filePath) {
   const html = readFileSync(filePath, 'utf8')
   const tables = [...html.matchAll(/<table[^>]*>([\s\S]*?)<\/table>/gi)].map((m) => m[1])
-  const sheets = []
-  tables.forEach((tbl, ti) => {
-    const matrix = [...tbl.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map((tr) =>
+  const matrices = tables.map((tbl) =>
+    [...tbl.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map((tr) =>
       [...tr[1].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((c) => htmlCellText(c[1]))
     )
+  )
+  const bedrijfRaw = findBedrijf(matrices)
+  const sheets = []
+  matrices.forEach((matrix, ti) => {
     const sheet = buildSheetFromMatrix(`Tabel ${ti + 1}`, matrix)
     if (sheet.headers.length && sheet.rowCount > 0) sheets.push(sheet)
   })
   const real = sheets.filter((s) => s.matched)
   const chosen = real.length ? real : sheets
-  return chosen.map(({ matched, ...s }) => s) // interne vlag niet lekken
+  // interne 'matched'-vlag niet lekken; het gedetecteerde bedrijf wel meesturen.
+  return chosen.map(({ matched, ...s }) => ({ ...s, bedrijfRaw }))
+}
+
+/**
+ * Zoek de ruwe waarde van het "Bedrijf"-veld in de metadata-tabellen
+ * (kop-waardeparen zoals "Bedrijf | VWE VAN WEZEL AUTOPARTS NV").
+ * @param {string[][][]} matrices
+ * @returns {string | null}
+ */
+function findBedrijf(matrices) {
+  for (const matrix of matrices) {
+    for (const row of matrix) {
+      if (row.length >= 2 && /^bedrijf$/i.test(String(row[0]).trim())) {
+        const v = String(row[1] ?? '').trim()
+        if (v) return v
+      }
+    }
+  }
+  return null
 }

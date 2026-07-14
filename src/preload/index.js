@@ -21,6 +21,11 @@ const api = {
 
   stats: () => ipcRenderer.invoke('stats'),
 
+  /** Lijst van bedrijven (aparte database per firma) + het actieve bedrijf. */
+  listCompanies: () => ipcRenderer.invoke('company:list'),
+  /** Wissel naar de database van een bedrijf. @param {string} code */
+  setCompany: (code) => ipcRenderer.invoke('company:set', code),
+
   getSettings: () => ipcRenderer.invoke('settings:getAll'),
   /** @param {string} key @param {any} value */
   setSetting: (key, value) => ipcRenderer.invoke('settings:set', { key, value }),

@@ -2,7 +2,8 @@ import { app, BrowserWindow, shell, dialog } from 'electron'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { existsSync } from 'node:fs'
-import { openDatabase } from '../database/connection.js'
+import { openCompany } from '../database/connection.js'
+import { activeCompany } from '../database/companies.js'
 import { setFuzzyEnabled } from '../search/searchEngine.js'
 import { registerIpc, teardownIpc } from './ipc.js'
 import { settings } from '../utils/settings.js'
@@ -73,7 +74,7 @@ app.whenReady().then(() => {
   // Faalt dit (bijv. native module-mismatch, vergrendeld of beschadigd
   // db-bestand), toon dan een begrijpelijke melding i.p.v. een stille crash.
   try {
-    openDatabase()
+    openCompany(activeCompany())
   } catch (e) {
     logger.error('app', 'Database openen mislukt:', e.message)
     dialog.showErrorBox(

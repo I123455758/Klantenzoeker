@@ -92,10 +92,14 @@ body {
   width: 38px;
   height: 38px;
   flex-shrink: 0;
-  font-size: 20px;
   border-radius: 11px;
-  background: var(--accent-grad);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.45);
+  background: rgba(91, 141, 239, 0.16);
+  color: #dbe6ff;
+}
+
+.brand-logo svg {
+  width: 22px;
+  height: 22px;
 }
 
 .brand-text {
@@ -152,10 +156,15 @@ body {
 }
 
 .nav-item .nav-ic {
-  font-size: 15px;
-  width: 20px;
-  text-align: center;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.nav-item.active .nav-ic,
+.nav-item:hover .nav-ic {
+  opacity: 1;
 }
 
 .nav-item:hover {
@@ -279,18 +288,20 @@ body {
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 14px;
-  opacity: 0.6;
+  width: 17px;
+  height: 17px;
+  color: var(--muted);
+  opacity: 0.75;
   pointer-events: none;
 }
 
 #search {
   width: 100%;
   font-size: 15px;
-  padding: 11px 38px 11px 18px;
+  padding: 11px 38px 11px 40px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--panel-2);
@@ -904,4 +915,112 @@ button.ghost.danger:hover {
     opacity: 0;
     transform: translateY(6px);
   }
+}
+
+/* --- Bedrijfsbadges + bedrijfswissel (aparte database per firma) ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.5;
+  color: #fff;
+  border-radius: 6px;
+  background: var(--badge-color, #64748b);
+  flex-shrink: 0;
+}
+
+/* Vaste, herkenbare kleuren per bekend bedrijf. */
+.badge[data-code='VWE'] {
+  --badge-color: #2563eb;
+}
+.badge[data-code='TRA'] {
+  --badge-color: #0d9488;
+}
+
+.company-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px 0 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.company-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--side-text);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+}
+
+.company-item:hover {
+  background: var(--side-panel);
+}
+
+.company-item.active {
+  background: var(--side-panel);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+.company-item .company-name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.company-item .check {
+  margin-left: auto;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0;
+}
+
+.company-item.active .check {
+  opacity: 1;
+}
+
+/* Bedrijfsbanner in het importvenster */
+.import-bedrijf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 13.5px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.import-bedrijf.hidden {
+  display: none;
+}
+
+.import-bedrijf .ib-text {
+  line-height: 1.4;
+}
+
+.import-bedrijf .ib-text strong {
+  font-weight: 650;
+}
+
+.import-bedrijf .muted {
+  display: block;
 }
