@@ -83,6 +83,7 @@ node --test                 # unit-tests (normalize, klantnummer, mapping, deriv
 | Onderdeel | Keuze |
 | --------- | ----- |
 | Runtime | Electron (main / preload / renderer gescheiden) |
+| Vormgeving | Inter-typografie (lokaal ingesloten), licht/donker thema, design tokens |
 | Database | better-sqlite3 (WAL, prepared statements, transacties) |
 | Zoeken | SQLite FTS5 met **trigram**-tokenizer + JS-herrangschikking |
 | Tabel | AG Grid Community (Infinite Row Model, gevirtualiseerd) |
