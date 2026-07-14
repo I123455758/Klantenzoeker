@@ -13,7 +13,6 @@
     <div id="app">
       <aside class="sidebar">
         <div class="brand">
-          <span class="brand-logo">🔎</span>
           <span class="brand-text">
             <span class="brand-name">Klantenzoeker</span>
             <span class="brand-sub">Klantenbeheer</span>
@@ -22,28 +21,27 @@
 
         <nav class="nav">
           <div class="nav-label">Overzicht</div>
-          <button class="nav-item active" id="nav-klanten"><span class="nav-ic">👥</span> Klanten</button>
+          <button class="nav-item active" id="nav-klanten">Klanten</button>
 
           <div class="nav-label">Gegevens</div>
-          <button class="nav-item" id="btn-import" title="Excel importeren"><span class="nav-ic">📥</span> Importeren</button>
-          <button class="nav-item" id="btn-pdf" title="PDF importeren"><span class="nav-ic">📄</span> PDF importeren</button>
-          <button class="nav-item" id="btn-export" title="Resultaten exporteren (Excel/CSV/PDF)"><span class="nav-ic">📤</span> Exporteren</button>
+          <button class="nav-item" id="btn-import" title="Excel importeren">Importeren</button>
+          <button class="nav-item" id="btn-pdf" title="PDF importeren">PDF importeren</button>
+          <button class="nav-item" id="btn-export" title="Resultaten exporteren (Excel/CSV/PDF)">Exporteren</button>
 
           <div class="nav-label">Extra</div>
-          <button class="nav-item" id="btn-seed" title="Vul testdata (100k)"><span class="nav-ic">⚡</span> Testdata</button>
-          <button class="nav-item" id="btn-accept" title="Acceptatietests draaien"><span class="nav-ic">✓</span> Tests</button>
+          <button class="nav-item" id="btn-seed" title="Vul testdata (100k)">Testdata</button>
+          <button class="nav-item" id="btn-accept" title="Acceptatietests draaien">Tests</button>
         </nav>
 
         <div class="sidebar-foot">
-          <button class="nav-item" id="btn-dark" title="Donkere modus wisselen"><span class="nav-ic">◐</span> Donkere modus</button>
-          <button class="nav-item" id="btn-settings" title="Instellingen"><span class="nav-ic">⚙</span> Instellingen</button>
+          <button class="nav-item" id="btn-dark" title="Donkere modus wisselen">Donkere modus</button>
+          <button class="nav-item" id="btn-settings" title="Instellingen">Instellingen</button>
         </div>
       </aside>
 
       <main class="main">
         <header class="topbar">
           <div class="search-wrap">
-            <span class="search-icon">🔍</span>
             <input
               id="search"
               type="text"
@@ -57,19 +55,15 @@
 
         <section class="stats-strip" id="stats-strip">
           <div class="kpi">
-            <span class="kpi-ic">👥</span>
             <div class="kpi-text"><span class="kpi-value" id="kpi-total">—</span><span class="kpi-label">Totaal klanten</span></div>
           </div>
           <div class="kpi kpi-ok">
-            <span class="kpi-ic">✅</span>
             <div class="kpi-text"><span class="kpi-value" id="kpi-actief">—</span><span class="kpi-label">Actief</span></div>
           </div>
           <div class="kpi kpi-mut">
-            <span class="kpi-ic">💤</span>
             <div class="kpi-text"><span class="kpi-value" id="kpi-inactief">—</span><span class="kpi-label">Inactief</span></div>
           </div>
           <div class="kpi">
-            <span class="kpi-ic">🏷️</span>
             <div class="kpi-text"><span class="kpi-value" id="kpi-groepen">—</span><span class="kpi-label">Grk5-groepen</span></div>
           </div>
         </section>
@@ -80,7 +74,6 @@
         <!-- Startpagina / lege-database-scherm -->
         <section id="welcome" class="welcome hidden">
           <div class="welcome-card">
-            <div class="welcome-logo">🔎</div>
             <h1>Welkom bij Klantenzoeker</h1>
             <p class="welcome-lead">
               Je database is nog leeg. Importeer je klanten om te beginnen — daarna
@@ -89,17 +82,14 @@
 
             <div class="tiles">
               <button class="tile" id="wel-excel">
-                <span class="tile-ic">📥</span>
                 <span class="tile-title">Excel importeren</span>
                 <span class="tile-desc">Lees een .xlsx-bestand in met automatische kolomherkenning.</span>
               </button>
               <button class="tile" id="wel-pdf">
-                <span class="tile-ic">📄</span>
                 <span class="tile-title">PDF importeren</span>
                 <span class="tile-desc">Haal klanten uit een PDF-lijst (klantnummer, naam, groeperingscodes …).</span>
               </button>
               <button class="tile" id="wel-seed">
-                <span class="tile-ic">⚡</span>
                 <span class="tile-title">Testdata genereren</span>
                 <span class="tile-desc">Vul 100.000 voorbeeldklanten om de snelheid te ervaren.</span>
               </button>

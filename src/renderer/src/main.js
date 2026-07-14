@@ -26,12 +26,9 @@ const toastsEl = $('toasts')
 function toast(message, type = 'info', ms = 3400) {
   const el = document.createElement('div')
   el.className = `toast ${type}`
-  const ic = document.createElement('span')
-  ic.className = 'toast-ic'
-  ic.textContent = type === 'success' ? '✅' : type === 'error' ? '⚠️' : 'ℹ️'
   const text = document.createElement('span')
   text.textContent = message
-  el.append(ic, text)
+  el.append(text)
   toastsEl.append(el)
   const remove = () => {
     el.classList.add('leaving')
@@ -197,10 +194,10 @@ $('btn-accept').addEventListener('click', async () => {
     const fails = r.results.filter((x) => !x.ok)
     console.table(r.results)
     if (r.failed === 0) {
-      statusEl.textContent = `✅ Alle ${r.total} acceptatietests geslaagd`
+      statusEl.textContent = `Alle ${r.total} acceptatietests geslaagd`
     } else {
       statusEl.textContent =
-        `⚠️ ${r.passed}/${r.total} geslaagd — mislukt: ` +
+        `${r.passed}/${r.total} geslaagd — mislukt: ` +
         fails.map((f) => `"${f.query}"`).join(', ')
     }
   } catch (err) {
