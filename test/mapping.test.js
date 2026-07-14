@@ -26,6 +26,32 @@ test('autoMap returns null for unknown fields', () => {
   assert.equal(m.klantnummer, null)
 })
 
+test('autoMap without rows keeps header-based Grk5 mapping (backward compatible)', () => {
+  const m = autoMap(['Klant', 'Omschrijving', 'Grk1', 'Grk1 (2)', 'Grk5', 'Grk5 (2)'])
+  assert.equal(m.grk5_a, 'Grk5')
+  assert.equal(m.grk5_b, 'Grk5 (2)')
+})
+
+test('autoMap with rows prefers filled Grk columns over empty Grk5', () => {
+  const headers = ['Klant', 'Omschrijving', 'Grk1', 'Grk1 (2)', 'Grk2', 'Grk2 (2)', 'Grk5', 'Grk5 (2)']
+  const rows = [
+    { Klant: '001379', Omschrijving: 'PLUSPARTS BV', Grk1: 'N', 'Grk1 (2)': 'N', Grk2: 'NL', 'Grk2 (2)': 'NL', Grk5: '', 'Grk5 (2)': '' }
+  ]
+  const m = autoMap(headers, rows)
+  assert.equal(m.klantnummer, 'Klant')
+  assert.equal(m.klantnaam, 'Omschrijving')
+  assert.equal(m.grk5_a, 'Grk1') // eerste gevulde Grk-kolom
+  assert.equal(m.grk5_b, 'Grk2') // gevulde kolom met ander Grk-nummer
+})
+
+test('autoMap with rows keeps a filled Grk5 mapping untouched', () => {
+  const headers = ['Klant', 'Omschrijving', 'Grk5', 'Grk5 (2)']
+  const rows = [{ Klant: '1', Omschrijving: 'X', Grk5: 'A', 'Grk5 (2)': 'B' }]
+  const m = autoMap(headers, rows)
+  assert.equal(m.grk5_a, 'Grk5')
+  assert.equal(m.grk5_b, 'Grk5 (2)')
+})
+
 test('applyMapping maps row and normalises status/empties', () => {
   const row = { Klant: '152', Omschrijving: ' AUTO CARS BV ', Actief: 'nee' }
   const mapping = { klantnummer: 'Klant', klantnaam: 'Omschrijving', status: 'Actief' }

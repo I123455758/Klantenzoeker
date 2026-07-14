@@ -111,7 +111,10 @@ export function registerIpc(win) {
     const res = await dialog.showOpenDialog(win, {
       title: 'Excel-bestand importeren',
       properties: ['openFile'],
-      filters: [{ name: 'Excel-werkboek', extensions: ['xlsx'] }]
+      filters: [
+        { name: 'Excel of ERP-export', extensions: ['xlsx', 'xls', 'htm', 'html'] },
+        { name: 'Alle bestanden', extensions: ['*'] }
+      ]
     })
     if (res.canceled || !res.filePaths[0]) return null
 
@@ -127,7 +130,7 @@ export function registerIpc(win) {
         headers: s.headers,
         rowCount: s.rowCount,
         sample: s.rows.slice(0, 8),
-        mapping: autoMap(s.headers)
+        mapping: autoMap(s.headers, s.rows)
       }))
     }
   })
